@@ -128,7 +128,7 @@ JNIEXPORT void JNICALL Java_com_salat_viralcam_app_activities_TrimapActivity_cal
         // fixme: something is wrong here
         for (int y = 0; y < trimapBitmap.height; ++y) {
             for (int x = 0; x < trimapBitmap.width; ++x) {
-                if(trimapBitmap(y, x) == TRIMAP_UNKNOWN){
+                if(trimapBitmap(y, x) == TRIMAP_UNKNOWN || trimapBitmap(y, x) == TRIMAP_FOREGROUND){
                     if(x < left)
                         left = x;
                     if(x > right)

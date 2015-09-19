@@ -86,8 +86,7 @@ static float calculateAlpha(const RGBA &foreground, const RGBA &background, cons
                 (foreground.green - background.green) * (foreground.green - background.green) +
                 (foreground.blue  - background.blue)  * (foreground.blue  - background.blue);
 
-    // todo: why the fuck I need to invert the value
-    return 1-min(max(result / div, 0.f), 1.f);
+    return min(max(result / div, 0.f), 1.f);
 }
 
 // Eq. 3
@@ -117,12 +116,9 @@ static void erodeFB(Bitmap trimap, int kernel_size) {
 
     for (int y = 1; y < trimap.height-1; ++y) {
         for (int x = 1; x < trimap.width-1; ++x) {
-            if( trimap(y  , x) != TRIMAP_UNKNOWN && (trimap(y  , x-1) == TRIMAP_UNKNOWN || trimap(y  , x+1) ==
-                                                                                           TRIMAP_UNKNOWN ||
-                trimap(y-1, x) == TRIMAP_UNKNOWN ||  trimap(y-1, x-1) == TRIMAP_UNKNOWN || trimap(y-1, x+1) ==
-                                                                                           TRIMAP_UNKNOWN ||
-                trimap(y+1, x) == TRIMAP_UNKNOWN ||  trimap(y+1, x-1) == TRIMAP_UNKNOWN || trimap(y+1, x+1) ==
-                                                                                           TRIMAP_UNKNOWN)){
+            if( trimap(y  , x) != TRIMAP_UNKNOWN && (trimap(y  , x-1) == TRIMAP_UNKNOWN || trimap(y  , x+1) ==  TRIMAP_UNKNOWN ||
+                trimap(y-1, x) == TRIMAP_UNKNOWN ||  trimap(y-1, x-1) == TRIMAP_UNKNOWN || trimap(y-1, x+1) ==  TRIMAP_UNKNOWN ||
+                trimap(y+1, x) == TRIMAP_UNKNOWN ||  trimap(y+1, x-1) == TRIMAP_UNKNOWN || trimap(y+1, x+1) ==  TRIMAP_UNKNOWN)){
                 trimap(y, x) = PLACEHOLDER;
             }
         }
@@ -340,9 +336,10 @@ static void calculateAlphaPatchMatch(Bitmap &image,
 
 void expansionOfKnownRegions(Bitmap &img, Bitmap &trimap, int niter)
 {
-    for (int i = 0; i < niter; ++i)
-        expansionOfKnownRegionsInternal(img, trimap, i + 1, niter - i);
-    //erodeFB(trimap, 2);
+    const int iter = 12;
+    for (int i = 0; i < iter; ++i)
+        expansionOfKnownRegionsInternal(img, trimap, 3, min(16, iter - i));
+    erodeFB(trimap, 2);
 }
 
 
@@ -376,7 +373,7 @@ static void globalMattingHelper(Bitmap &image, Bitmap &trimap, MaskBitmap &alpha
                     alpha(y, x) = MaskBitmap::DEFINITE_FOREGROUND;
                     break;
                 case TRIMAP_UNKNOWN: {
-                    alpha(y, x) = (uint8_t) (MaskBitmap::MAX * samples[y][x].alpha);
+                    alpha(y, x) = (uint8_t) (MaskBitmap::MAX * (samples[y][x].alpha));
                     break;
                 }
                 case TRIMAP_BACKGROUND:

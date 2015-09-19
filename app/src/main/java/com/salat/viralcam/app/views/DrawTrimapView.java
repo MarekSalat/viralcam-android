@@ -37,6 +37,8 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         DRAW_FOREGROUND,
         DRAW_BACKGROUND,
         DRAW_UNKNOWN,
+
+        DONE
     }
 
     private TrimapDrawState state = TrimapDrawState.RAW_BACKGROUND;
@@ -75,7 +77,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
 
         mPaint = new Paint();
         mPaint.setColor(0xFF72549A);
-        mPaint.setAntiAlias(true);
+        mPaint.setAntiAlias(false);
         mPaint.setDither(true);
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setStrokeJoin(Paint.Join.ROUND);
@@ -84,7 +86,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
 
         mBackgroundPaint = new Paint();
         mBackgroundPaint.setColor(Color.BLACK);
-        mBackgroundPaint.setAntiAlias(true);
+        mBackgroundPaint.setAntiAlias(false);
         mBackgroundPaint.setDither(true);
         mBackgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         mBackgroundPaint.setStrokeJoin(Paint.Join.ROUND);
@@ -93,7 +95,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
 
         mForegroundPaint = new Paint();
         mForegroundPaint.setColor(Color.WHITE);
-        mForegroundPaint.setAntiAlias(true);
+        mForegroundPaint.setAntiAlias(false);
         mForegroundPaint.setDither(true);
         mForegroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         mForegroundPaint.setStrokeJoin(Paint.Join.ROUND);
@@ -102,7 +104,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
 
         mClearPaint= new Paint();
         mClearPaint.setColor(Color.BLACK);
-        mClearPaint.setAntiAlias(true);
+        mClearPaint.setAntiAlias(false);
         mClearPaint.setDither(true);
         mClearPaint.setStyle(Paint.Style.STROKE);
         mClearPaint.setStrokeJoin(Paint.Join.ROUND);
@@ -125,10 +127,6 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         mCanvas = new Canvas(mBitmap);
 
         super.onSizeChanged(w, h, oldw, oldh);
-    }
-
-    public void setTrimapDimensions(int width, int height) {
-
     }
 
     @Override
@@ -231,6 +229,9 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         float y = event.getY();
 
         if(mCanvas == null)
+            return true;
+
+        if (state == TrimapDrawState.DONE)
             return true;
 
         switch (event.getAction()) {

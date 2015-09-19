@@ -41,8 +41,8 @@ struct Bitmap : GeneralBitmap<uint32_t >{
 
 struct MaskBitmap : GeneralBitmap<uint8_t >{
     static const uint8_t MAX = 255;
-    static const uint8_t DEFINITE_FOREGROUND = 0x00;
-    static const uint8_t DEFINITE_BACKGROUND = 0xff;
+    static const uint8_t DEFINITE_FOREGROUND = 0xFF;
+    static const uint8_t DEFINITE_BACKGROUND = 0x00;
 
     MaskBitmap(unsigned int width, unsigned int height, unsigned int stride, uint8_t *pixels)
             : GeneralBitmap(width, height, stride, pixels) { }
