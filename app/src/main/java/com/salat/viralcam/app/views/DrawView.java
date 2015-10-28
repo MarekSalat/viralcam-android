@@ -119,17 +119,15 @@ public class DrawView extends View implements ViewTreeObserver.OnPreDrawListener
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 touch_start(x, y);
-                invalidate();
                 break;
             case MotionEvent.ACTION_MOVE:
                 touch_move(x, y);
-                invalidate();
                 break;
             case MotionEvent.ACTION_UP:
                 touch_up();
-                invalidate();
                 break;
         }
+        invalidate();
         return true;
     }
 

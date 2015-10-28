@@ -27,10 +27,13 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.PixelFormat;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -72,12 +75,14 @@ import android.support.v13.app.FragmentCompat;
 import android.support.v4.app.ActivityCompat;
 
 import com.salat.viralcam.app.R;
+import com.salat.viralcam.app.util.Constants;
 import com.salat.viralcam.app.views.AutoFitTextureView;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -110,12 +115,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * increasing request ID set by calls to {@link CaptureRequest.Builder#setTag(Object)} is sent to
  * the camera to begin the JPEG and RAW capture sequence, and an
  * {@link ImageSaver.ImageSaverBuilder} is stored for this request in the
- * {@link #mJpegResultQueue} and {@link #mRawResultQueue}.
+ * {@link #mJpegResultQueue}
  * </li>
  * <li>
  * As {@link CaptureResult}s and {@link Image}s become available via callbacks in a background
  * thread, a {@link ImageSaver.ImageSaverBuilder} is looked up by the request ID in
- * {@link #mJpegResultQueue} and {@link #mRawResultQueue} and updated.
+ * {@link #mJpegResultQueue} updated.
  * </li>
  * <li>
  * When all of the necessary results to save an image are available, the an {@link ImageSaver} is
@@ -124,7 +129,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * </li>
  * </ul>
  */
-//@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class Camera2RawFragment extends Fragment implements View.OnClickListener, FragmentCompat.OnRequestPermissionsResultCallback {
 
@@ -298,12 +302,8 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
      */
     private RefCountedAutoCloseable<ImageReader> mJpegImageReader;
 
-    /**
-     * A reference counted holder wrapping the {@link ImageReader} that handles RAW image captures.
-     * This is used to allow us to clean up the {@link ImageReader} when all background tasks using
-     * its {@link Image}s have completed.
-     */
-    private RefCountedAutoCloseable<ImageReader> mRawImageReader;
+    private RefCountedAutoCloseable<ImageReader> mPreviewImageReader;
+
 
     /**
      * Whether or not the currently configured camera device is fixed-focus.
@@ -319,11 +319,6 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
      * Request ID to {@link ImageSaver.ImageSaverBuilder} mapping for in-progress JPEG captures.
      */
     private final TreeMap<Integer, ImageSaver.ImageSaverBuilder> mJpegResultQueue = new TreeMap<>();
-
-    /**
-     * Request ID to {@link ImageSaver.ImageSaverBuilder} mapping for in-progress RAW captures.
-     */
-    private final TreeMap<Integer, ImageSaver.ImageSaverBuilder> mRawResultQueue = new TreeMap<>();
 
     /**
      * {@link CaptureRequest.Builder} for the camera preview
@@ -408,19 +403,6 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
 
     };
 
-    /**
-     * This a callback object for the {@link ImageReader}. "onImageAvailable" will be called when a
-     * RAW image is ready to be saved.
-     */
-    private final ImageReader.OnImageAvailableListener mOnRawImageAvailableListener
-            = new ImageReader.OnImageAvailableListener() {
-
-        @Override
-        public void onImageAvailable(ImageReader reader) {
-            dequeueAndSaveImage(mRawResultQueue, mRawImageReader);
-        }
-
-    };
 
     /**
      * A {@link CameraCaptureSession.CaptureCallback} that handles events for the preview and
@@ -504,9 +486,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         public void onCaptureStarted(CameraCaptureSession session, CaptureRequest request,
                                      long timestamp, long frameNumber) {
             String currentDateTime = generateTimestamp();
-            File rawFile = new File(Environment.
-                    getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-                    "RAW_" + currentDateTime + ".dng");
+
             File jpegFile = new File(Environment.
                     getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
                     "JPEG_" + currentDateTime + ".jpg");
@@ -514,15 +494,12 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
             // Look up the ImageSaverBuilder for this request and update it with the file name
             // based on the capture start time.
             ImageSaver.ImageSaverBuilder jpegBuilder;
-            ImageSaver.ImageSaverBuilder rawBuilder;
             int requestId = (int) request.getTag();
             synchronized (mCameraStateLock) {
                 jpegBuilder = mJpegResultQueue.get(requestId);
-                rawBuilder = mRawResultQueue.get(requestId);
             }
 
             if (jpegBuilder != null) jpegBuilder.setFile(jpegFile);
-            if (rawBuilder != null) rawBuilder.setFile(rawFile);
         }
 
         @Override
@@ -530,29 +507,21 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                                        TotalCaptureResult result) {
             int requestId = (int) request.getTag();
             ImageSaver.ImageSaverBuilder jpegBuilder;
-            ImageSaver.ImageSaverBuilder rawBuilder;
             StringBuilder sb = new StringBuilder();
 
             // Look up the ImageSaverBuilder for this request and update it with the CaptureResult
             synchronized (mCameraStateLock) {
                 jpegBuilder = mJpegResultQueue.get(requestId);
-                rawBuilder = mRawResultQueue.get(requestId);
 
                 // If we have all the results necessary, save the image to a file in the background.
                 handleCompletionLocked(requestId, jpegBuilder, mJpegResultQueue);
-                handleCompletionLocked(requestId, rawBuilder, mRawResultQueue);
 
                 if (jpegBuilder != null) {
                     jpegBuilder.setResult(result);
                     sb.append("Saving JPEG as: ");
                     sb.append(jpegBuilder.getSaveLocation());
                 }
-                if (rawBuilder != null) {
-                    rawBuilder.setResult(result);
-                    if (jpegBuilder != null) sb.append(", ");
-                    sb.append("Saving RAW as: ");
-                    sb.append(rawBuilder.getSaveLocation());
-                }
+
                 finishedCaptureLocked();
             }
 
@@ -565,7 +534,6 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
             int requestId = (int) request.getTag();
             synchronized (mCameraStateLock) {
                 mJpegResultQueue.remove(requestId);
-                mRawResultQueue.remove(requestId);
                 finishedCaptureLocked();
             }
             showToast("Capture failed!");
@@ -598,8 +566,8 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
 
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
-        view.findViewById(R.id.picture).setOnClickListener(this);
-        view.findViewById(R.id.info).setOnClickListener(this);
+//        view.findViewById(R.id.picture).setOnClickListener(this);
+//        view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
 
         // Setup a new OrientationEventListener.  This is used to handle rotation events like a
@@ -663,10 +631,10 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.picture: {
-                takePicture();
-                break;
-            }
+//            case R.id.picture: {
+//                takePicture();
+//                break;
+//            }
             case R.id.info: {
                 Activity activity = getActivity();
                 if (null != activity) {
@@ -683,6 +651,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
     /**
      * Sets up state related to camera that is needed before opening a {@link CameraDevice}.
      */
+    Bitmap bitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888);
     private boolean setUpCameraOutputs() {
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
@@ -697,12 +666,12 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
 
-                // We only use a camera that supports RAW in this sample.
-                if (!contains(characteristics.get(
-                                CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES),
-                        CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)) {
-                    continue;
-                }
+//                // We only use a camera that supports RAW in this sample.
+//                if (!contains(characteristics.get(
+//                                CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES),
+//                        CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_MANUAL_POST_PROCESSING)) {
+//                    continue;
+//                }
 
                 StreamConfigurationMap map = characteristics.get(
                         CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
@@ -712,29 +681,38 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                         new CompareSizesByArea());
 
-                Size largestRaw = Collections.max(
-                        Arrays.asList(map.getOutputSizes(ImageFormat.RAW_SENSOR)),
-                        new CompareSizesByArea());
-
                 synchronized (mCameraStateLock) {
-                    // Set up ImageReaders for JPEG and RAW outputs.  Place these in a reference
+                    // Set up ImageReaders for JPEG outputs.  Place these in a reference
                     // counted wrapper to ensure they are only closed when all background tasks
                     // using them are finished.
                     if (mJpegImageReader == null || mJpegImageReader.getAndRetain() == null) {
                         mJpegImageReader = new RefCountedAutoCloseable<>(
                                 ImageReader.newInstance(largestJpeg.getWidth(),
-                                        largestJpeg.getHeight(), ImageFormat.JPEG, /*maxImages*/5));
+                                        largestJpeg.getHeight(), ImageFormat.JPEG, /*maxImages*/2));
                     }
                     mJpegImageReader.get().setOnImageAvailableListener(
                             mOnJpegImageAvailableListener, mBackgroundHandler);
 
-                    if (mRawImageReader == null || mRawImageReader.getAndRetain() == null) {
-                        mRawImageReader = new RefCountedAutoCloseable<>(
-                                ImageReader.newInstance(largestRaw.getWidth(),
-                                        largestRaw.getHeight(), ImageFormat.RAW_SENSOR, /*maxImages*/ 5));
+                    if (mPreviewImageReader == null || mPreviewImageReader.getAndRetain() == null) {
+                        mPreviewImageReader = new RefCountedAutoCloseable<>(
+                                // bug: use ImageFormat.YUV_* instead.
+                                ImageReader.newInstance(800, 600, PixelFormat.RGBA_8888, /*maxImages*/2));
                     }
-                    mRawImageReader.get().setOnImageAvailableListener(
-                            mOnRawImageAvailableListener, mBackgroundHandler);
+                    mPreviewImageReader.get().setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+                        @Override
+                        public void onImageAvailable(ImageReader reader) {
+                            Image image = mPreviewImageReader.get().acquireLatestImage();
+                            if(image == null){
+                                Log.e(TAG, "acquireLatestImage returned null.");
+                                return;
+                            }
+
+                            final Image.Plane[] planes = image.getPlanes();
+                            final Buffer buffer = planes[0].getBuffer().rewind();
+                            bitmap.copyPixelsFromBuffer(buffer);
+                            image.close();
+                        }
+                    }, mBackgroundHandler);
 
                     mCharacteristics = characteristics;
                     mCameraId = cameraId;
@@ -852,21 +830,22 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                 // tasks saving Images from these readers have been completed.
                 mPendingUserCaptures = 0;
                 mState = STATE_CLOSED;
-                if (null != mCaptureSession) {
+                if (mCaptureSession != null) {
                     mCaptureSession.close();
                     mCaptureSession = null;
                 }
-                if (null != mCameraDevice) {
+                if (mCameraDevice != null) {
                     mCameraDevice.close();
                     mCameraDevice = null;
                 }
-                if (null != mJpegImageReader) {
+                if (mJpegImageReader != null) {
                     mJpegImageReader.close();
                     mJpegImageReader = null;
                 }
-                if (null != mRawImageReader) {
-                    mRawImageReader.close();
-                    mRawImageReader = null;
+
+                if (mPreviewImageReader != null) {
+                    mPreviewImageReader.close();
+                    mPreviewImageReader = null;
                 }
             }
         } catch (InterruptedException e) {
@@ -921,11 +900,12 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
             mPreviewRequestBuilder
                     = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             mPreviewRequestBuilder.addTarget(surface);
+            mPreviewRequestBuilder.addTarget(mPreviewImageReader.get().getSurface());
 
             // Here, we create a CameraCaptureSession for camera preview.
             mCameraDevice.createCaptureSession(Arrays.asList(surface,
                             mJpegImageReader.get().getSurface(),
-                            mRawImageReader.get().getSurface()), new CameraCaptureSession.StateCallback() {
+                            mPreviewImageReader.get().getSurface()), new CameraCaptureSession.StateCallback() {
                         @Override
                         public void onConfigured(CameraCaptureSession cameraCaptureSession) {
                             synchronized (mCameraStateLock) {
@@ -1128,7 +1108,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
      * longer moving, waits for auto-exposure to choose a good exposure value, and waits for
      * auto-white-balance to converge.
      */
-    private void takePicture() {
+    public void takePicture() {
         synchronized (mCameraStateLock) {
             mPendingUserCaptures++;
 
@@ -1187,7 +1167,6 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                     mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
 
             captureBuilder.addTarget(mJpegImageReader.get().getSurface());
-            captureBuilder.addTarget(mRawImageReader.get().getSurface());
 
             // Use the same AE and AF modes as the preview.
             setup3AControlsLocked(captureBuilder);
@@ -1206,11 +1185,8 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
             // of active requests.
             ImageSaver.ImageSaverBuilder jpegBuilder = new ImageSaver.ImageSaverBuilder(activity)
                     .setCharacteristics(mCharacteristics);
-            ImageSaver.ImageSaverBuilder rawBuilder = new ImageSaver.ImageSaverBuilder(activity)
-                    .setCharacteristics(mCharacteristics);
 
             mJpegResultQueue.put((int) request.getTag(), jpegBuilder);
-            mRawResultQueue.put((int) request.getTag(), rawBuilder);
 
             mCaptureSession.capture(request, mCaptureCallback, mBackgroundHandler);
 
@@ -1349,21 +1325,6 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                     try {
                         output = new FileOutputStream(mFile);
                         output.write(bytes);
-                        success = true;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        mImage.close();
-                        closeOutput(output);
-                    }
-                    break;
-                }
-                case ImageFormat.RAW_SENSOR: {
-                    DngCreator dngCreator = new DngCreator(mCharacteristics, mCaptureResult);
-                    FileOutputStream output = null;
-                    try {
-                        output = new FileOutputStream(mFile);
-                        dngCreator.writeImage(output, mImage);
                         success = true;
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -1598,25 +1559,41 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
      * @param aspectRatio The aspect ratio
      * @return The optimal {@code Size}, or an arbitrary one if none were big enough
      */
+    private static Size optimalSize;
     private static Size chooseOptimalSize(Size[] choices, int width, int height, Size aspectRatio) {
+        if(optimalSize != null)
+            return optimalSize;
+
         // Collect the supported resolutions that are at least as big as the preview Surface
         List<Size> bigEnough = new ArrayList<>();
+        List<Size> notScreenRatio = new ArrayList<>();
+
         int w = aspectRatio.getWidth();
         int h = aspectRatio.getHeight();
         for (Size option : choices) {
-            if (option.getHeight() == option.getWidth() * h / w &&
+            if (option.getHeight() == option.getWidth() * (h / (double) w )&&
                     option.getWidth() >= width && option.getHeight() >= height) {
                 bigEnough.add(option);
             }
+            else if(option.getHeight() >= Constants.IMAGE_ALLOWED_HEIGHT && option.getWidth() >= Constants.IMAGE_ALLOWED_WIDTH){
+                notScreenRatio.add(option);
+            }
         }
 
+        Size result;
         // Pick the smallest of those, assuming we found any
         if (bigEnough.size() > 0) {
-            return Collections.min(bigEnough, new CompareSizesByArea());
+            result = Collections.min(bigEnough, new CompareSizesByArea());
         } else {
             Log.e(TAG, "Couldn't find any suitable preview size");
-            return choices[0];
+
+            result = notScreenRatio.get(notScreenRatio.size()-1);
         }
+
+        Log.e(TAG, "Preview dimension [" + result.getWidth() + ", " + result.getHeight() + "]");
+
+        optimalSize = result;
+        return result;
     }
 
     /**
@@ -1798,7 +1775,5 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                             })
                     .create();
         }
-
     }
-
 }

@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">ViralCam</string>
 
-    <string name="dummy_button">Select picture</string>
+    <string name="select_background_button">Select background picture</string>
+    <string name="take_picture_button">Take picture</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="title_activity_take_picture">TakePictureActivity</string>
 
@@ -15,4 +16,7 @@
     <string name="description_info">description</string>
     <string name="request_permission">permission request</string>
     <string name="intro_message">intro message</string>
+    <string name="title_activity_home_screen">home screen</string>
+    <string name="dummy">foo</string>
+    <string name="loading">Processing…</string>
 </resources>
