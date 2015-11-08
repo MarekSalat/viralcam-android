@@ -293,13 +293,9 @@ static void calculateAlphaPatchMatch(Bitmap &image,
                 // random walk
                 int max_boundary_width = static_cast<int>(max(foregroundBoundary.size(), backgroundBoundary.size()));
 
-                for (int k = 0;; k++)
+                float r;
+                for (int k = 0; (r = max_boundary_width * powf(0.5f, k)) > 1; k++)
                 {
-                    float r = max_boundary_width * powf(0.5f, k);
-
-                    if (r < 1)
-                        break;
-
                     unsigned long foreground_distance = (unsigned long) (r * (rand() / (RAND_MAX + 1.f)));
                     unsigned long background_distance = (unsigned long) (r * (rand() / (RAND_MAX + 1.f)));
 

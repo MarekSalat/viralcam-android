@@ -43,16 +43,18 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
 
     private TrimapDrawState state = TrimapDrawState.RAW_BACKGROUND;
 
-    private Bitmap mBitmap;
-    private Canvas mCanvas;
+    private Bitmap trimapBitmap;
+    private Canvas trimapCanvas;
 
-    private Path mPath;
+    private Bitmap pathBitmap;
+    private Canvas pathCanvas;
 
-    private Paint mBitmapPaint;
-    private Paint mPaint;
-    private Paint mClearPaint;
-    private Paint mBackgroundPaint;
-    private Paint mForegroundPaint;
+    private Path path;
+
+    private Paint pathPaint;
+    private Paint clearPaint;
+    private Paint backgroundPaint;
+    private Paint foregroundPaint;
 
 
     public DrawTrimapView(Context c) {
@@ -71,122 +73,129 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
 
     private void init(Context context) {
         setListener(null);
-        mPath = new Path();
-        mBitmapPaint = new Paint(Paint.DITHER_FLAG);
-        mBitmapPaint.setAlpha(127);
+        path = new Path();
 
-        mPaint = new Paint();
-        mPaint.setColor(0xFF72549A);
-        mPaint.setAntiAlias(false);
-        mPaint.setDither(true);
-        mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setStrokeJoin(Paint.Join.ROUND);
-        mPaint.setStrokeCap(Paint.Cap.ROUND);
-        mPaint.setStrokeWidth(PAINT_STROKE_WIDTH);
+        pathPaint = new Paint();
+        pathPaint.setColor(0xFF72549A);
+        pathPaint.setAntiAlias(false);
+        pathPaint.setDither(true);
+        pathPaint.setStyle(Paint.Style.STROKE);
+        pathPaint.setStrokeJoin(Paint.Join.ROUND);
+        pathPaint.setStrokeCap(Paint.Cap.ROUND);
+        pathPaint.setStrokeWidth(PAINT_STROKE_WIDTH);
 
-        mBackgroundPaint = new Paint();
-        mBackgroundPaint.setColor(Color.BLACK);
-        mBackgroundPaint.setAntiAlias(false);
-        mBackgroundPaint.setDither(true);
-        mBackgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        mBackgroundPaint.setStrokeJoin(Paint.Join.ROUND);
-        mBackgroundPaint.setStrokeCap(Paint.Cap.ROUND);
-        mBackgroundPaint.setStrokeWidth(PAINT_STROKE_WIDTH);
+        backgroundPaint = new Paint();
+        backgroundPaint.setColor(Color.BLACK);
+        backgroundPaint.setAntiAlias(false);
+        backgroundPaint.setDither(true);
+        backgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        backgroundPaint.setStrokeJoin(Paint.Join.ROUND);
+        backgroundPaint.setStrokeCap(Paint.Cap.ROUND);
+        backgroundPaint.setStrokeWidth(PAINT_STROKE_WIDTH);
 
-        mForegroundPaint = new Paint();
-        mForegroundPaint.setColor(Color.WHITE);
-        mForegroundPaint.setAntiAlias(false);
-        mForegroundPaint.setDither(true);
-        mForegroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        mForegroundPaint.setStrokeJoin(Paint.Join.ROUND);
-        mForegroundPaint.setStrokeCap(Paint.Cap.ROUND);
-        mForegroundPaint.setStrokeWidth(PAINT_STROKE_WIDTH);
+        foregroundPaint = new Paint();
+        foregroundPaint.setColor(Color.WHITE);
+        foregroundPaint.setAntiAlias(false);
+        foregroundPaint.setDither(true);
+        foregroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        foregroundPaint.setStrokeJoin(Paint.Join.ROUND);
+        foregroundPaint.setStrokeCap(Paint.Cap.ROUND);
+        foregroundPaint.setStrokeWidth(PAINT_STROKE_WIDTH);
 
-        mClearPaint= new Paint();
-        mClearPaint.setColor(Color.BLACK);
-        mClearPaint.setAntiAlias(false);
-        mClearPaint.setDither(true);
-        mClearPaint.setStyle(Paint.Style.STROKE);
-        mClearPaint.setStrokeJoin(Paint.Join.ROUND);
-        mClearPaint.setStrokeCap(Paint.Cap.ROUND);
-        mClearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-
-        //BlurMaskFilter blur = new BlurMaskFilter(8, BlurMaskFilter.Blur.NORMAL);
-        //mPaint.setMaskFilter(blur);
+        clearPaint = new Paint();
+        clearPaint.setColor(Color.BLACK);
+        clearPaint.setAntiAlias(false);
+        clearPaint.setDither(true);
+        clearPaint.setStyle(Paint.Style.STROKE);
+        clearPaint.setStrokeJoin(Paint.Join.ROUND);
+        clearPaint.setStrokeCap(Paint.Cap.ROUND);
+        clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        if(mBitmap != null){
-            mBitmap.recycle();
-            mBitmap = null;
-            mCanvas = null;
+        if(trimapBitmap != null){
+            trimapBitmap.recycle();
+            trimapBitmap = null;
+            trimapCanvas = null;
         }
 
-        mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        mCanvas = new Canvas(mBitmap);
+        trimapBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        trimapCanvas = new Canvas(trimapBitmap);
+
+        if(pathBitmap != null){
+            pathBitmap.recycle();
+            pathBitmap = null;
+            pathCanvas = null;
+        }
+
+        pathBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        pathCanvas = new Canvas(pathBitmap);
 
         super.onSizeChanged(w, h, oldw, oldh);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawColor(Color.TRANSPARENT);
-        canvas.drawBitmap(mBitmap, 0, 0, mBitmapPaint);
-        canvas.drawPath(mPath, mPaint);
+        canvas.drawBitmap(trimapBitmap, 0, 0, null);
+        canvas.drawBitmap(pathBitmap, 0, 0, null);
     }
 
-    private float mX, mY;
-    private int mInitX, mInitY;
-    private static final float TOUCH_TOLERANCE = 4;
+
+    private float pathOldX, pathOldY;
+    private int pathInitX, pathInitY;
+    private static final float TOUCH_TOLERANCE = 5;
 
     private void touch_start(float x, float y) {
-        mPath.reset();
-        mPath.moveTo(x, y);
-        mX = x;
-        mY = y;
-        mInitX = (int) x;
-        mInitY = (int) y;
+        path.reset();
+        path.moveTo(x, y);
+        pathOldX = x;
+        pathOldY = y;
+        pathInitX = (int) x;
+        pathInitY = (int) y;
 
         listener.onDrawStart(this);
     }
 
     private void touch_move(float x, float y) {
-        float dx = Math.abs(x - mX);
-        float dy = Math.abs(y - mY);
+        float dx = Math.abs(x - pathOldX);
+        float dy = Math.abs(y - pathOldY);
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-            mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
-            mX = x;
-            mY = y;
+            pathCanvas.drawLine(pathOldX, pathOldY, x, y, pathPaint);
+            path.lineTo(pathOldX, pathOldY);
+            pathOldX = x;
+            pathOldY = y;
         }
     }
 
     private void touch_up() {
-        mPath.lineTo(mX, mY);
+        pathCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+
+        path.lineTo(pathOldX, pathOldY);
         TrimapDrawState prevState = state;
 
         switch (state){
             case RAW_BACKGROUND: {
-                mPath.close();
+                path.close();
 
                 // Fill path outside by clipping (difference) an filling rectangle.
-                mCanvas.clipPath(mPath, Region.Op.DIFFERENCE);
-                mCanvas.drawColor(mBackgroundPaint.getColor());
-                mCanvas.clipRect(new Rect(0, 0, mCanvas.getWidth(), mCanvas.getHeight()), Region.Op.REPLACE);
+                path.setFillType(Path.FillType.INVERSE_WINDING);
+                trimapCanvas.drawPath(path, backgroundPaint);
+                path.setFillType(Path.FillType.WINDING);
 
                 state = TrimapDrawState.RAW_FOREGROUND;
             } break;
             case RAW_FOREGROUND:
-                mPath.close();
-                mCanvas.drawPath(mPath, mForegroundPaint);
+                path.close();
+                trimapCanvas.drawPath(path, foregroundPaint);
 
-                mPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
-                mClearPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
-                mBackgroundPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
-                mForegroundPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
+                pathPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
+                clearPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
+                backgroundPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
+                foregroundPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
 
-                mBackgroundPaint.setStyle(Paint.Style.STROKE);
-                mForegroundPaint.setStyle(Paint.Style.STROKE);
+                backgroundPaint.setStyle(Paint.Style.STROKE);
+                foregroundPaint.setStyle(Paint.Style.STROKE);
 
                 state = TrimapDrawState.FINAL_TUNING;
                 break;
@@ -197,27 +206,27 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
                 int initPixel = 0;
 
                 if(state == TrimapDrawState.FINAL_TUNING)
-                    initPixel = mBitmap.getPixel(mInitX, mInitY);
+                    initPixel = trimapBitmap.getPixel(pathInitX, pathInitY);
                 if(state == TrimapDrawState.DRAW_BACKGROUND)
-                    initPixel = mBackgroundPaint.getColor();
+                    initPixel = backgroundPaint.getColor();
                 else if(state == TrimapDrawState.DRAW_FOREGROUND)
-                    initPixel = mForegroundPaint.getColor();
+                    initPixel = foregroundPaint.getColor();
                 else if(state == TrimapDrawState.DRAW_UNKNOWN)
                     initPixel = 0;
 
                 // Clear pixel if start was on empty pixel
-                if(Color.alpha(initPixel) == 0)
-                    mCanvas.drawPath(mPath, mClearPaint);
+                if(initPixel == 0)
+                    trimapCanvas.drawPath(path, clearPaint);
                 // Draw foreground if start was on foreground pixel
-                else if(Color.alpha(initPixel) > 0 && Color.red(initPixel) > 127)
-                    mCanvas.drawPath(mPath, mForegroundPaint);
+                else if(initPixel == foregroundPaint.getColor())
+                    trimapCanvas.drawPath(path, foregroundPaint);
                 // Draw background other wise
-                else if(Color.alpha(initPixel) > 0 && Color.red(initPixel) < 127)
-                    mCanvas.drawPath(mPath, mBackgroundPaint);
+                else if(initPixel == backgroundPaint.getColor())
+                    trimapCanvas.drawPath(path, backgroundPaint);
                 break;
         }
         // kill this so we don't double draw
-        mPath.reset();
+        path.reset();
         listener.onDrawEnd(this);
         if(prevState != state)
             listener.onStateChange(this, state);
@@ -228,7 +237,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         float x = event.getX();
         float y = event.getY();
 
-        if(mCanvas == null)
+        if(trimapCanvas == null)
             return true;
 
         if (state == TrimapDrawState.DONE)
@@ -258,8 +267,8 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         return state;
     }
 
-    public Bitmap getBitmap() {
-        return mBitmap;
+    public Bitmap getTrimapBitmap() {
+        return trimapBitmap;
     }
 
     public void setState(TrimapDrawState newState){

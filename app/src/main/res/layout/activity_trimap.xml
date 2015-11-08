@@ -18,7 +18,8 @@
     <com.salat.viralcam.app.views.DrawTrimapView
         android:id="@+id/drawTrimapView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:alpha=".5" />
 
     <com.github.clans.fab.FloatingActionButton
         android:id="@+id/button_share"

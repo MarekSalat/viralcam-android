@@ -10,9 +10,7 @@ import android.graphics.PorterDuffXfermode;
 import android.util.AttributeSet;
 import android.view.View;
 
-/**
- * Created by Marek on 02.11.2015.
- */
+
 public class TestView extends View {
 
     public static final int WIDTH = 200;

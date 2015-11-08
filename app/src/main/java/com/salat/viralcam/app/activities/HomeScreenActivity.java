@@ -17,7 +17,7 @@ import android.view.View;
 public class HomeScreenActivity extends Activity{
     private static final String TAG = "HomeScreenActivity";
     private static final int PICK_IMAGE_REQUEST = 1;
-    private String foregroundImagePath;
+    private String backgroundImagePath;
 
 
     @Override
@@ -40,7 +40,7 @@ public class HomeScreenActivity extends Activity{
             public void onClick(View v) {
                 camera2RawFragment.takePicture(new CameraFragment.OnCaptureCompleted() {
                     @Override
-                    public void onCaptureComplete(String backgroundImagePath, Uri uri) {
+                    public void onCaptureComplete(String foregroundImagePath, Uri uri) {
                         Intent intent = new Intent(HomeScreenActivity.this, TrimapActivity.class);
                         intent.putExtra(TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_PATH, foregroundImagePath);
                         intent.putExtra(TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_PATH, backgroundImagePath);
@@ -74,11 +74,11 @@ public class HomeScreenActivity extends Activity{
         }
 
         Uri uri = data.getData();
-        foregroundImagePath = RealPathUtil.getRealPathFromURI(this, uri);
+        backgroundImagePath = RealPathUtil.getRealPathFromURI(this, uri);
 
         ImageWithMask imageView = (ImageWithMask) findViewById(R.id.imageView);
         imageView.setImage(
-            BitmapLoader.load(foregroundImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT)
+            BitmapLoader.load(backgroundImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT)
         );
 
         super.onActivityResult(requestCode, resultCode, data);
