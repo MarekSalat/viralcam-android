@@ -8,8 +8,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
-import android.graphics.Region;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -26,22 +24,21 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
     }
     public DrawTrimapEvents listener;
 
-    public static final int PAINT_STROKE_WIDTH = 12;
+    public static final int PAINT_STROKE_WIDTH = 9;
     public static final int PAINT_FINAL_TUNING_STROKE_WIDTH = PAINT_STROKE_WIDTH * 6;
 
     public enum TrimapDrawState {
-        RAW_BACKGROUND,
-        RAW_FOREGROUND,
-        FINAL_TUNING,
+        INIT,
+        TUNING,
 
-        DRAW_FOREGROUND,
-        DRAW_BACKGROUND,
-        DRAW_UNKNOWN,
+        ONLY_FOREGROUND,
+        ONLY_BACKGROUND,
+        ONLY_UNKNOWN,
 
         DONE
     }
 
-    private TrimapDrawState state = TrimapDrawState.RAW_BACKGROUND;
+    private TrimapDrawState state = TrimapDrawState.INIT;
 
     private Bitmap trimapBitmap;
     private Canvas trimapCanvas;
@@ -82,25 +79,25 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         pathPaint.setStyle(Paint.Style.STROKE);
         pathPaint.setStrokeJoin(Paint.Join.ROUND);
         pathPaint.setStrokeCap(Paint.Cap.ROUND);
-        pathPaint.setStrokeWidth(PAINT_STROKE_WIDTH);
+        pathPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
 
         backgroundPaint = new Paint();
         backgroundPaint.setColor(Color.BLACK);
         backgroundPaint.setAntiAlias(false);
         backgroundPaint.setDither(true);
-        backgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        backgroundPaint.setStyle(Paint.Style.STROKE);
         backgroundPaint.setStrokeJoin(Paint.Join.ROUND);
         backgroundPaint.setStrokeCap(Paint.Cap.ROUND);
-        backgroundPaint.setStrokeWidth(PAINT_STROKE_WIDTH);
+        backgroundPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
 
         foregroundPaint = new Paint();
         foregroundPaint.setColor(Color.WHITE);
         foregroundPaint.setAntiAlias(false);
         foregroundPaint.setDither(true);
-        foregroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        foregroundPaint.setStyle(Paint.Style.STROKE);
         foregroundPaint.setStrokeJoin(Paint.Join.ROUND);
         foregroundPaint.setStrokeCap(Paint.Cap.ROUND);
-        foregroundPaint.setStrokeWidth(PAINT_STROKE_WIDTH);
+        foregroundPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
 
         clearPaint = new Paint();
         clearPaint.setColor(Color.BLACK);
@@ -110,6 +107,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         clearPaint.setStrokeJoin(Paint.Join.ROUND);
         clearPaint.setStrokeCap(Paint.Cap.ROUND);
         clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        clearPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
     }
 
     @Override
@@ -175,43 +173,31 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         TrimapDrawState prevState = state;
 
         switch (state){
-            case RAW_BACKGROUND: {
+            case INIT: {
                 path.close();
+                foregroundPaint.setStyle(Paint.Style.FILL);
 
-                // Fill path outside by clipping (difference) an filling rectangle.
-                path.setFillType(Path.FillType.INVERSE_WINDING);
-                trimapCanvas.drawPath(path, backgroundPaint);
-                path.setFillType(Path.FillType.WINDING);
-
-                state = TrimapDrawState.RAW_FOREGROUND;
-            } break;
-            case RAW_FOREGROUND:
-                path.close();
+                trimapCanvas.drawColor(backgroundPaint.getColor());
                 trimapCanvas.drawPath(path, foregroundPaint);
+                trimapCanvas.drawPath(path, clearPaint);
 
-                pathPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
-                clearPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
-                backgroundPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
-                foregroundPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
-
-                backgroundPaint.setStyle(Paint.Style.STROKE);
                 foregroundPaint.setStyle(Paint.Style.STROKE);
+                state = TrimapDrawState.TUNING;
 
-                state = TrimapDrawState.FINAL_TUNING;
-                break;
-            case DRAW_FOREGROUND:
-            case DRAW_BACKGROUND:
-            case DRAW_UNKNOWN:
-            case FINAL_TUNING:
+            } break;
+            case ONLY_FOREGROUND:
+            case ONLY_BACKGROUND:
+            case ONLY_UNKNOWN:
+            case TUNING:
                 int initPixel = 0;
 
-                if(state == TrimapDrawState.FINAL_TUNING)
+                if(state == TrimapDrawState.TUNING)
                     initPixel = trimapBitmap.getPixel(pathInitX, pathInitY);
-                if(state == TrimapDrawState.DRAW_BACKGROUND)
+                if(state == TrimapDrawState.ONLY_BACKGROUND)
                     initPixel = backgroundPaint.getColor();
-                else if(state == TrimapDrawState.DRAW_FOREGROUND)
+                else if(state == TrimapDrawState.ONLY_FOREGROUND)
                     initPixel = foregroundPaint.getColor();
-                else if(state == TrimapDrawState.DRAW_UNKNOWN)
+                else if(state == TrimapDrawState.ONLY_UNKNOWN)
                     initPixel = 0;
 
                 // Clear pixel if start was on empty pixel
@@ -272,10 +258,10 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
     }
 
     public void setState(TrimapDrawState newState){
-        if(state == TrimapDrawState.RAW_BACKGROUND || state == TrimapDrawState.RAW_FOREGROUND) {
+        if(state == TrimapDrawState.INIT) {
             throw new IllegalArgumentException("You are setting state to early. State cannot be before final tuning stage.");
         }
-        if(newState == TrimapDrawState.RAW_BACKGROUND || newState == TrimapDrawState.RAW_FOREGROUND){
+        if(newState == TrimapDrawState.INIT){
             throw new IllegalArgumentException("State is not allowed to be set");
         }
 

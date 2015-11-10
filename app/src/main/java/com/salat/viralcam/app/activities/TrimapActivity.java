@@ -84,11 +84,11 @@ public class TrimapActivity extends Activity {
 
         final DrawTrimapView drawTrimapView = (DrawTrimapView) findViewById(R.id.drawTrimapView);
         drawTrimapView.setListener(new DrawTrimapView.DrawTrimapEvents() {
-            boolean canShow = false;
+            boolean canShowButtons = false;
 
             @Override
             public void onDrawStart(DrawTrimapView view) {
-                if (!canShow)
+                if (!canShowButtons)
                     return;
 
                 buttonMagic.hide(true);
@@ -97,7 +97,7 @@ public class TrimapActivity extends Activity {
 
             @Override
             public void onDrawEnd(DrawTrimapView view) {
-                if (!canShow)
+                if (!canShowButtons)
                     return;
                 buttonMagic.show(true);
                 menuButtons.showMenu(false);
@@ -105,12 +105,13 @@ public class TrimapActivity extends Activity {
 
             @Override
             public void onStateChange(DrawTrimapView view, DrawTrimapView.TrimapDrawState state) {
-                if (canShow || state != DrawTrimapView.TrimapDrawState.FINAL_TUNING) {
+                if (canShowButtons || state != DrawTrimapView.TrimapDrawState.TUNING) {
                     return;
                 }
-                canShow = true;
+                canShowButtons = true;
                 buttonMagic.show(true);
                 menuButtons.showMenu(false);
+                buttonMagic.callOnClick();
             }
         });
 
@@ -216,7 +217,7 @@ public class TrimapActivity extends Activity {
         findViewById(R.id.button_background).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DRAW_BACKGROUND);
+                drawTrimapView.setState(DrawTrimapView.TrimapDrawState.ONLY_BACKGROUND);
             }
         });
 
@@ -224,21 +225,21 @@ public class TrimapActivity extends Activity {
         findViewById(R.id.button_foreground).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DRAW_FOREGROUND);
+                drawTrimapView.setState(DrawTrimapView.TrimapDrawState.ONLY_FOREGROUND);
             }
         });
 
         findViewById(R.id.button_clear).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DRAW_UNKNOWN);
+                drawTrimapView.setState(DrawTrimapView.TrimapDrawState.ONLY_UNKNOWN);
             }
         });
 
         findViewById(R.id.button_clever).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                drawTrimapView.setState(DrawTrimapView.TrimapDrawState.FINAL_TUNING);
+                drawTrimapView.setState(DrawTrimapView.TrimapDrawState.TUNING);
             }
         });
 
@@ -246,7 +247,7 @@ public class TrimapActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.DONE) {
-                    drawTrimapView.setState(DrawTrimapView.TrimapDrawState.FINAL_TUNING);
+                    drawTrimapView.setState(DrawTrimapView.TrimapDrawState.TUNING);
                     drawTrimapView.setVisibility(View.VISIBLE);
                 }
                 menuButtons.toggle(true);
