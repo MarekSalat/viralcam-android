@@ -25,33 +25,4 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true" />
 
-    <!--<FrameLayout-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_alignParentBottom="true"-->
-        <!--android:layout_alignParentStart="true"-->
-        <!--android:layout_alignParentLeft="true"-->
-
-        <!--android:layout_below="@id/texture"-->
-        <!--android:background="#4285f4">-->
-
-        <!--&lt;!&ndash;<Button&ndash;&gt;-->
-            <!--&lt;!&ndash;android:id="@+id/picture"&ndash;&gt;-->
-            <!--&lt;!&ndash;android:layout_width="wrap_content"&ndash;&gt;-->
-            <!--&lt;!&ndash;android:layout_height="wrap_content"&ndash;&gt;-->
-            <!--&lt;!&ndash;android:layout_gravity="center"&ndash;&gt;-->
-            <!--&lt;!&ndash;android:text="@string/picture" />&ndash;&gt;-->
-
-        <!--&lt;!&ndash;<ImageButton&ndash;&gt;-->
-            <!--&lt;!&ndash;android:id="@+id/info"&ndash;&gt;-->
-            <!--&lt;!&ndash;android:contentDescription="@string/description_info"&ndash;&gt;-->
-            <!--&lt;!&ndash;style="@android:style/Widget.Holo.Button.Borderless.Small"&ndash;&gt;-->
-            <!--&lt;!&ndash;android:layout_width="wrap_content"&ndash;&gt;-->
-            <!--&lt;!&ndash;android:layout_height="wrap_content"&ndash;&gt;-->
-            <!--&lt;!&ndash;android:layout_gravity="center_vertical|right"&ndash;&gt;-->
-            <!--&lt;!&ndash;android:padding="20dp"&ndash;&gt;-->
-            <!--&lt;!&ndash;android:src="@mipmap/ic_launcher" />&ndash;&gt;-->
-
-    <!--</FrameLayout>-->
-
 </RelativeLayout>
