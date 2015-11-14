@@ -3,6 +3,7 @@ package com.salat.viralcam.app.activities;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -125,11 +126,14 @@ public class TrimapActivity extends Activity {
 
                 Thread task = new Thread() {
                     Paint bitmapPaint = new Paint(Paint.DITHER_FLAG);
+                    final int orientation = getResources().getConfiguration().orientation;
 
                     @Override
                     public void run() {
                         final Bitmap drawnTrimapBitmap = drawTrimapView.getTrimapBitmap();
-                        final float scale = foreground.getHeight() / (float) drawnTrimapBitmap.getHeight();
+                        final float scale = orientation == Configuration.ORIENTATION_LANDSCAPE ?
+                                foreground.getHeight() / (float) drawnTrimapBitmap.getHeight() :
+                                foreground.getWidth() / (float) drawnTrimapBitmap.getWidth();
 
                         // for better performance we use just smallest part of the image as possible.
                         final Rect drawnTrimapBoundingBox = new Rect();
@@ -173,7 +177,10 @@ public class TrimapActivity extends Activity {
                         final Bitmap result = background.copy(Bitmap.Config.ARGB_8888, true);
                         Canvas resultCanvas = new Canvas(result);
                         tempPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_OVER));
-                        final float scale2 = background.getHeight() / (float) foreground.getHeight();
+                        final float scale2 = orientation == Configuration.ORIENTATION_LANDSCAPE ?
+                                background.getHeight() / (float) foreground.getHeight() :
+                                background.getWidth() / (float) foreground.getWidth();
+
                         Rect backgroundRect = scaleRect(foregroundBoundingBox, scale2);
                         resultCanvas.drawBitmap(trimap, null, backgroundRect, tempPaint);
 
