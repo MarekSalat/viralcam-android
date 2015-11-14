@@ -1,4 +1,4 @@
-package com.salat.viralcam.app.fragments;
+package fragments;
 
 import android.app.Activity;
 import android.content.res.Configuration;
@@ -18,19 +18,20 @@ import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import com.salat.viralcam.app.R;
-import com.salat.viralcam.app.util.Constants;
+import com.salat.viralcam.jellybeansupportlibrary.R;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 
 public class CameraOldVersionsFragment extends Fragment implements CameraFragment {
-    private static String TAG = "CameraOldVersionsFragment";
+    private static String TAG = "fragments.CameraOldVersionsFragment";
 
     public static class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
         private static boolean DEBUGGING = true;
@@ -441,7 +442,7 @@ public class CameraOldVersionsFragment extends Fragment implements CameraFragmen
             public void onPictureTaken(byte[] data, Camera camera) {
                 FileOutputStream outStream = null;
 
-                String time = Constants.SIMPLE_DATE_FORMAT.format(new Date());
+                String time = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSS", Locale.US).format(new Date());
 
                 File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "JPEG_" + time + ".jpg");
 

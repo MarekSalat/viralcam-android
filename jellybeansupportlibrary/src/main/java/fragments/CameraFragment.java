@@ -1,4 +1,4 @@
-package com.salat.viralcam.app.fragments;
+package fragments;
 
 import android.net.Uri;
 

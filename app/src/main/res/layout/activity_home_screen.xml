@@ -9,8 +9,7 @@
         android:id="@+id/container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#000"
-        tools:context="com.example.android.camera2raw.CameraActivity" />
+        android:background="#000" />
 
     <com.salat.viralcam.app.views.ImageWithMask
         android:layout_width="match_parent"
@@ -42,4 +41,4 @@
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
         android:src="@drawable/ic_edit" />
-    </RelativeLayout>
+</RelativeLayout>

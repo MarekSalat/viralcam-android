@@ -85,7 +85,7 @@ public class ImageWithMask extends View {
         paint.setStrokeWidth(1);
         paint.setStyle(Paint.Style.FILL_AND_STROKE);
         paint.setShader(new RadialGradient(mBitmapRect.width() / 2, mBitmapRect.height() / 2,
-                    getHeight() / 3, Color.BLACK, Color.TRANSPARENT, Shader.TileMode.MIRROR));
+                    mBitmapRect.height() / 3, Color.BLACK, Color.TRANSPARENT, Shader.TileMode.MIRROR));
 
         canvas.drawCircle(mBitmapRect.width() / 2, mBitmapRect.height() / 2, mBitmapRect.height() / 3, paint);
     }

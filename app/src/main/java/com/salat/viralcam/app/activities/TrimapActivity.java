@@ -165,7 +165,7 @@ public class TrimapActivity extends Activity {
                         tempPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
                         blendCanvas.drawBitmap(image, 0, 0, tempPaint);
 
-                        // free some memory. It not needed any more
+                        // free some memory. It is not needed any more
                         image.recycle();
                         alpha.recycle();
 
@@ -308,6 +308,8 @@ public class TrimapActivity extends Activity {
     private native void findBoundingBox(Bitmap trimap, Rect rect);
 
     static {
+//        System.loadLibrary("gnustl_shared");
+//        System.loadLibrary("reloc_library");
         System.loadLibrary("nativeAlphaMatte");
     }
 }

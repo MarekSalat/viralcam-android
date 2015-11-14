@@ -1,0 +1,23 @@
+apply plugin: 'com.android.model.library'
+
+
+model {
+    android {
+        compileSdkVersion = 16
+        buildToolsVersion = "23.0.1"
+
+        defaultConfig.with {
+            minSdkVersion.apiLevel = 16
+            targetSdkVersion.apiLevel = 20
+            versionCode = 1
+            versionName = "1.0"
+            multiDexEnabled = true
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+//    compile 'com.android.support:appcompat-v7:23.1.0'
+}

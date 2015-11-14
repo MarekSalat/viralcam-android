@@ -11,15 +11,14 @@ model {
             targetSdkVersion.apiLevel = 23
             versionCode = 1
             versionName = "1.0"
-            multiDexEnabled = true
         }
-
     }
 
     android.buildTypes {
         release {
             minifyEnabled = true
             proguardFiles += file('proguard-rules.pro')
+            multiDexEnabled = true
 
             ndk.with {
                 debuggable = false
@@ -39,7 +38,8 @@ model {
         moduleName = "nativeAlphaMatte"
         ldLibs += ["m", "log", "jnigraphics", "android"]
         cppFlags += ["-std=c++11", "-O3", "-ffast-math", "-fexceptions"]
-        stl = "gnustl_shared"
+        stl = "gnustl_static"
+        platformVersion = 16
     }
 
     android.productFlavors {
@@ -67,6 +67,7 @@ dependencies {
     compile 'com.android.support:support-v13:23.1.0'
     compile 'com.github.clans:fab:1.6.1'
     compile 'com.android.support:design:23.1.0'
+    compile project(':jellybeansupportlibrary')
 }
 
 

@@ -1,11 +1,8 @@
 package com.salat.viralcam.app.activities;
 
 import com.github.clans.fab.FloatingActionButton;
-import com.salat.viralcam.app.BuildConfig;
 import com.salat.viralcam.app.R;
-import com.salat.viralcam.app.fragments.CameraFragment;
 import com.salat.viralcam.app.fragments.CameraLollipopFragment;
-import com.salat.viralcam.app.fragments.CameraOldVersionsFragment;
 import com.salat.viralcam.app.util.BitmapLoader;
 import com.salat.viralcam.app.util.Constants;
 import com.salat.viralcam.app.util.RealPathUtil;
@@ -21,6 +18,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
+
+import fragments.CameraFragment;
+import fragments.CameraOldVersionsFragment;
 
 public class HomeScreenActivity extends Activity {
     private static final String TAG = "HomeScreenActivity";
@@ -132,6 +132,7 @@ public class HomeScreenActivity extends Activity {
         imageView.setImage(
                 BitmapLoader.load(backgroundImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT)
         );
+        imageView.invalidate();
     }
 
     private boolean isBackgroundSelected(){

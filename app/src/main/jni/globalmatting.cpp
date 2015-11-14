@@ -102,7 +102,7 @@ static float colorCost(const RGBA &foreground, const RGBA &background, const RGB
 static float distCost(const Point &p0, const Point &p1, float minDist)
 {
     int dist = sqr(p0.x - p1.x) + sqr(p0.y - p1.y);
-    return sqrtf(dist) / minDist;
+    return sqrtf(dist) / (minDist + 1e-6f);
 }
 
 inline static float colorDist(const RGBA a, const RGBA b)
