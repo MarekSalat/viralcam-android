@@ -159,6 +159,10 @@ public class TrimapActivity extends Activity {
                         // calculate alpha mask
                         calculateAlphaMask(image, trimap, alpha);
 
+                        // Update trimap
+                        Canvas drawnTrimapBitmapCanvas = new Canvas(drawnTrimapBitmap);
+                        drawnTrimapBitmapCanvas.drawBitmap(trimap, null, drawnTrimapBoundingBox, null);
+
                         // reuse trimap
                         Canvas blendCanvas = new Canvas(trimap);
                         Paint tempPaint = new Paint();
