@@ -344,6 +344,9 @@ static void globalMattingHelper(Bitmap &image, Bitmap &trimap, MaskBitmap &alpha
     vector<Point> foregroundBoundary = findBoundaryPixels(trimap, TRIMAP_FOREGROUND, TRIMAP_UNKNOWN);
     vector<Point> backgroundBoundary = findBoundaryPixels(trimap, TRIMAP_BACKGROUND, TRIMAP_UNKNOWN);
 
+    if(foregroundBoundary.size() <= 42 || backgroundBoundary.size() <= 42)
+        return;
+
     int boundaryPixels = (int)(foregroundBoundary.size() + backgroundBoundary.size());
     for (int i = 0; i < boundaryPixels; ++i)
     {

@@ -4,11 +4,26 @@ import android.annotation.TargetApi;
 import android.os.Build;
 import android.util.Size;
 
+import com.salat.viralcam.app.BuildConfig;
+
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class Constants {
+    public static enum Flavor {
+        Production,
+        AlphaBeta,
+    }
+    public static enum BuildType {
+        Release,
+        Debug,
+    }
+    public static final Flavor FLAVOR = BuildConfig.VERSION_NAME.contains("alpha") ||
+            BuildConfig.VERSION_NAME.contains("beta") ? Flavor.AlphaBeta : Flavor.Production;
+
+    public static BuildType BUILD_TYPE = BuildConfig.BUILD_TYPE.contains("debug") ?
+            BuildType.Debug : BuildType.Release;
+
     // 9gag image dimension
     public static final int IMAGE_OPTIMAL_WIDTH = 400;
     public static final int IMAGE_OPTIMAL_HEIGHT = 400;

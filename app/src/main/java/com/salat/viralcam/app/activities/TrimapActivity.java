@@ -26,6 +26,7 @@ import com.github.clans.fab.FloatingActionMenu;
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.util.BitmapLoader;
 import com.salat.viralcam.app.util.Constants;
+import com.salat.viralcam.app.util.RectHelper;
 import com.salat.viralcam.app.views.DrawTrimapView;
 
 import java.io.File;
@@ -40,7 +41,7 @@ public class TrimapActivity extends Activity {
 
     public static final String INTENT_EXTRA_BACKGROUND_IMAGE_PATH = "TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_PATH";
     public static final String INTENT_EXTRA_FOREGROUND_IMAGE_PATH = "TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_PATH";
-    public static final int BOUNDINGBOX_PADDING = 16;
+    public static final int BOUNDINGBOX_PADDING = 4;
 
     private ProgressDialog processDialog;
     private Bitmap foreground;
@@ -137,9 +138,9 @@ public class TrimapActivity extends Activity {
 
                         // for better performance we use just smallest part of the image as possible.
                         final Rect drawnTrimapBoundingBox = new Rect();
-                        addPadding(drawnTrimapBoundingBox, BOUNDINGBOX_PADDING, foreground.getWidth(), foreground.getHeight());
                         findBoundingBox(drawnTrimapBitmap, drawnTrimapBoundingBox);
-                        final Rect foregroundBoundingBox = scaleRect(drawnTrimapBoundingBox, scale);
+                        RectHelper.addPadding(drawnTrimapBoundingBox, BOUNDINGBOX_PADDING, foreground.getWidth(), foreground.getHeight());
+                        final Rect foregroundBoundingBox = RectHelper.scale(drawnTrimapBoundingBox, scale);
 
                         // create bitmaps for image, trimap and final alpha
                         final Rect foregroundRect = new Rect(0, 0, foregroundBoundingBox.width(), foregroundBoundingBox.height());
@@ -181,7 +182,7 @@ public class TrimapActivity extends Activity {
                                 background.getHeight() / (float) foreground.getHeight() :
                                 background.getWidth() / (float) foreground.getWidth();
 
-                        Rect backgroundRect = scaleRect(foregroundBoundingBox, scale2);
+                        Rect backgroundRect = RectHelper.scale(foregroundBoundingBox, scale2);
                         resultCanvas.drawBitmap(trimap, null, backgroundRect, tempPaint);
 
                         trimap.recycle();
@@ -197,24 +198,6 @@ public class TrimapActivity extends Activity {
                                 processDialog.hide();
                             }
                         });
-                    }
-
-                    private Rect scaleRect(Rect boundingBox, float scale) {
-                        Rect res = new Rect();
-
-                        res.top = (int) (boundingBox.top * scale);
-                        res.bottom = (int) (boundingBox.bottom * scale);
-                        res.left = (int) (boundingBox.left * scale);
-                        res.right = (int) (boundingBox.right * scale);
-
-                        return res;
-                    }
-
-                    private void addPadding(Rect boundingBox, int padding, int maxWidth, int maxHeight) {
-                        if (boundingBox.top - padding > 0) boundingBox.top -= padding;
-                        if (boundingBox.left - padding > 0) boundingBox.left -= padding;
-                        if (boundingBox.bottom + padding < maxHeight) boundingBox.bottom += padding;
-                        if (boundingBox.right + padding < maxWidth) boundingBox.right += padding;
                     }
                 };
                 task.start();

@@ -8,11 +8,15 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.Region;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
+
+import com.salat.viralcam.app.util.RectHelper;
 
 
 public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawListener {
@@ -24,7 +28,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
     }
     public DrawTrimapEvents listener;
 
-    public static final int PAINT_STROKE_WIDTH = 9;
+    public static final int PAINT_STROKE_WIDTH = 8;
     public static final int PAINT_FINAL_TUNING_STROKE_WIDTH = PAINT_STROKE_WIDTH * 6;
 
     public enum TrimapDrawState {
@@ -52,6 +56,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
     private Paint clearPaint;
     private Paint backgroundPaint;
     private Paint foregroundPaint;
+    private Paint alphaPaint;
 
 
     public DrawTrimapView(Context c) {
@@ -70,12 +75,16 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
 
     private void init(Context context) {
         setListener(null);
+        this.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+
         path = new Path();
+
+        alphaPaint = new Paint();
+        alphaPaint.setAlpha(127);
 
         pathPaint = new Paint();
         pathPaint.setColor(0xFF72549A);
         pathPaint.setAntiAlias(false);
-        pathPaint.setDither(true);
         pathPaint.setStyle(Paint.Style.STROKE);
         pathPaint.setStrokeJoin(Paint.Join.ROUND);
         pathPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -84,7 +93,6 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         backgroundPaint = new Paint();
         backgroundPaint.setColor(Color.BLACK);
         backgroundPaint.setAntiAlias(false);
-        backgroundPaint.setDither(true);
         backgroundPaint.setStyle(Paint.Style.STROKE);
         backgroundPaint.setStrokeJoin(Paint.Join.ROUND);
         backgroundPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -93,7 +101,6 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         foregroundPaint = new Paint();
         foregroundPaint.setColor(Color.WHITE);
         foregroundPaint.setAntiAlias(false);
-        foregroundPaint.setDither(true);
         foregroundPaint.setStyle(Paint.Style.STROKE);
         foregroundPaint.setStrokeJoin(Paint.Join.ROUND);
         foregroundPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -102,12 +109,17 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         clearPaint = new Paint();
         clearPaint.setColor(Color.BLACK);
         clearPaint.setAntiAlias(false);
-        clearPaint.setDither(true);
+        clearPaint.setDither(false);
         clearPaint.setStyle(Paint.Style.STROKE);
         clearPaint.setStrokeJoin(Paint.Join.ROUND);
         clearPaint.setStrokeCap(Paint.Cap.ROUND);
         clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         clearPaint.setStrokeWidth(PAINT_FINAL_TUNING_STROKE_WIDTH);
+    }
+
+    @Override
+    public boolean hasOverlappingRendering() {
+        return false;
     }
 
     @Override
@@ -133,18 +145,34 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         super.onSizeChanged(w, h, oldw, oldh);
     }
 
+    Rect tmpDrawRect = new Rect();
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawBitmap(trimapBitmap, 0, 0, null);
-        canvas.drawBitmap(pathBitmap, 0, 0, null);
+        if(state != TrimapDrawState.INIT)
+            canvas.drawBitmap(trimapBitmap, 0, 0, alphaPaint);
+
+        if(!drawingPath)
+            return;
+
+        tmpDrawRect.set(pathBoundingBox);
+        RectHelper.addPadding(tmpDrawRect, (int) pathPaint.getStrokeWidth(), canvas.getWidth(), canvas.getHeight());
+        canvas.clipRect(tmpDrawRect);
+        canvas.drawBitmap(pathBitmap, 0, 0, alphaPaint);
     }
 
 
+    private boolean drawingPath = false;
+    private Rect pathBoundingBox = new Rect();
     private float pathOldX, pathOldY;
     private int pathInitX, pathInitY;
-    private static final float TOUCH_TOLERANCE = 5;
+    private static final float TOUCH_TOLERANCE = 4;
 
     private void touch_start(float x, float y) {
+        pathBoundingBox.left = pathBitmap.getWidth();
+        pathBoundingBox.top = pathBitmap.getHeight();
+        pathBoundingBox.right = 0;
+        pathBoundingBox.bottom = 0;
+
         path.reset();
         path.moveTo(x, y);
         pathOldX = x;
@@ -155,18 +183,44 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         listener.onDrawStart(this);
     }
 
+    Rect touchMoveRect = new Rect();
     private void touch_move(float x, float y) {
+        drawingPath = true;
+
+        if(x < pathBoundingBox.left)
+            pathBoundingBox.left = (int) x;
+        if(x > pathBoundingBox.right)
+            pathBoundingBox.right = (int) x;
+        if(y < pathBoundingBox.top)
+            pathBoundingBox.top = (int) y;
+        if(y > pathBoundingBox.bottom)
+            pathBoundingBox.bottom = (int) y;
+
         float dx = Math.abs(x - pathOldX);
         float dy = Math.abs(y - pathOldY);
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+//            touchMoveRect.set(
+//                    (int)Math.min(pathOldX, x),
+//                    (int)Math.min(pathOldY, y),
+//                    (int)Math.max(pathOldX, x),
+//                    (int)Math.max(pathOldY, y)
+//            );
+//            RectHelper.addPadding(touchMoveRect, (int) pathPaint.getStrokeWidth(), pathCanvas.getWidth(), pathCanvas.getHeight());
+
+//            pathCanvas.save();
+//            pathCanvas.clipRect(touchMoveRect, Region.Op.REPLACE);
             pathCanvas.drawLine(pathOldX, pathOldY, x, y, pathPaint);
-            path.lineTo(pathOldX, pathOldY);
+//            pathCanvas.restore();
+
+            path.lineTo(x, y);
             pathOldX = x;
             pathOldY = y;
         }
     }
 
     private void touch_up() {
+        drawingPath = false;
+
         pathCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
         path.lineTo(pathOldX, pathOldY);
