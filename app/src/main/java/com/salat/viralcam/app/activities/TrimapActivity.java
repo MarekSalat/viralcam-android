@@ -241,6 +241,7 @@ public class TrimapActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.DONE) {
+                    imageView.setImageBitmap(foreground);
                     drawTrimapView.setState(DrawTrimapView.TrimapDrawState.TUNING);
                     drawTrimapView.setVisibility(View.VISIBLE);
                 }
