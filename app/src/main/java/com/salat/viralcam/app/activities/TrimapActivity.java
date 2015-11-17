@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
@@ -15,6 +16,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -35,9 +38,11 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+public class TrimapActivity extends Activity  {
+    private static final String TAG = "TrimapActivity";
 
-public class TrimapActivity extends Activity {
-    private final String TAG = "TrimapActivity";
+    public static final float MIN_SCALE_FACTOR = 1f;
+    public static final float MAX_SCALE_FACTOR = 5f;
 
     public static final String INTENT_EXTRA_BACKGROUND_IMAGE_PATH = "TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_PATH";
     public static final String INTENT_EXTRA_FOREGROUND_IMAGE_PATH = "TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_PATH";
@@ -46,6 +51,7 @@ public class TrimapActivity extends Activity {
     private ProgressDialog processDialog;
     private Bitmap foreground;
     private Bitmap background;
+    private ScaleGestureDetector scaleGestureDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +80,7 @@ public class TrimapActivity extends Activity {
         background = BitmapLoader.load(backgroundImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
 
         final ImageView imageView = (ImageView) findViewById(R.id.imageView);
+
         imageView.setImageBitmap(foreground);
 
         imageView.setImageURI(Uri.parse(foregroundImagePath));
@@ -85,7 +92,7 @@ public class TrimapActivity extends Activity {
         menuButtons.hideMenu(false);
 
         final DrawTrimapView drawTrimapView = (DrawTrimapView) findViewById(R.id.drawTrimapView);
-        drawTrimapView.setListener(new DrawTrimapView.DrawTrimapEvents() {
+        drawTrimapView.setDrawTrimapEventsListener(new DrawTrimapView.DrawTrimapEvents() {
             boolean canShowButtons = false;
 
             @Override
@@ -194,7 +201,10 @@ public class TrimapActivity extends Activity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                imageView.setImageBitmap(result);
+                                // drawTrimapView contains clear matrix with current scale and translation
+                                Matrix drawTrimapViewMatrix = drawTrimapView.getImageMatrix();
+                                setImageViewBitmapWithMatrix(drawTrimapViewMatrix, imageView, result);
+
                                 drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DONE);
                                 drawTrimapView.setVisibility(View.INVISIBLE);
                                 buttonShare.setVisibility(View.VISIBLE);
@@ -241,7 +251,8 @@ public class TrimapActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.DONE) {
-                    imageView.setImageBitmap(foreground);
+                    setImageViewBitmapWithMatrix(drawTrimapView.getImageMatrix(), imageView, foreground);
+
                     drawTrimapView.setState(DrawTrimapView.TrimapDrawState.TUNING);
                     drawTrimapView.setVisibility(View.VISIBLE);
                 }
@@ -252,59 +263,137 @@ public class TrimapActivity extends Activity {
         buttonShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                processDialog.show();
+                buttonShareAction(imageView);
+            }
+        });
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Bitmap bmp = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
+        scaleGestureDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.OnScaleGestureListener() {
+            Matrix imageViewMatrix = new Matrix();
+            Matrix trimapViewMatrix = new Matrix();
 
-                        SimpleDateFormat date = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSS", Locale.US);
-                        String currentDateTime = date.format(new Date());
+            DrawTrimapView.TrimapDrawState savedState;
+            float currentScale = MIN_SCALE_FACTOR;
 
-                        File file = new File(Environment.
-                                getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-                                "PNG_" + currentDateTime + ".png");
+            float prevX;
+            float prevY;
 
-                        FileOutputStream out = null;
-                        try {
-                            out = new FileOutputStream(file);
-                            bmp.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
-                            // PNG is a loss-less format, the compression factor (100) is ignored
-                        } catch (Exception e) {
-                            Log.e(TAG, "Something get wrong: " + e.toString());
-                            Log.e(TAG, "on file: " + file.toString());
-                            Toast.makeText(TrimapActivity.this, "Something get wrong: " + e.toString(), Toast.LENGTH_SHORT).show();
-                        } finally {
-                            try {
-                                if (out != null) {
-                                    out.flush();
-                                    out.close();
-                                }
-                            } catch (IOException e) {
-                                Log.e(TAG, e.toString());
-                            }
-                            processDialog.hide();
+            @Override
+            public boolean onScaleBegin(ScaleGestureDetector detector) {
+                prevX = detector.getFocusX();
+                prevY = detector.getFocusY();
 
-                            Intent share = new Intent(Intent.ACTION_SEND);
-                            share.setType("image/png");
+                trimapViewMatrix.set(drawTrimapView.getImageMatrix());
+                imageViewMatrix.set(imageView.getImageMatrix());
+                if(imageView.getScaleType() != ImageView.ScaleType.MATRIX){
+                    imageView.setScaleType(ImageView.ScaleType.MATRIX);
+                }
 
-                            share.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
-                            startActivity(Intent.createChooser(share, "Share Image"));
-                        }
-                    }
-                });
+                savedState = drawTrimapView.getState();
+                drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DONE);
+                return true;
+            }
 
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                final float distX = detector.getFocusX() - prevX;
+                final float distY = detector.getFocusY() - prevY;
+
+                currentScale *= detector.getScaleFactor();
+                if(currentScale >= MIN_SCALE_FACTOR && currentScale <= MAX_SCALE_FACTOR){
+                    imageViewMatrix.postScale(detector.getScaleFactor(), detector.getScaleFactor(), detector.getFocusX(), detector.getFocusY());
+                    trimapViewMatrix.postScale(detector.getScaleFactor(), detector.getScaleFactor(), detector.getFocusX(), detector.getFocusY());
+                }
+                currentScale = Math.max(MIN_SCALE_FACTOR, Math.min(currentScale, MAX_SCALE_FACTOR));
+                imageViewMatrix.postTranslate(distX, distY);
+                trimapViewMatrix.postTranslate(distX, distY);
+
+                imageView.setImageMatrix(imageViewMatrix);
+                drawTrimapView.setMatrix(trimapViewMatrix);
+
+                imageView.invalidate();
+                drawTrimapView.invalidate();
+
+                prevX = detector.getFocusX();
+                prevY = detector.getFocusY();
+                return true;
+            }
+
+            @Override
+            public void onScaleEnd(ScaleGestureDetector detector) {
+                drawTrimapView.setState(savedState);
             }
         });
     }
+
+    private void buttonShareAction(final ImageView imageView) {
+        processDialog.show();
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Bitmap bmp = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
+
+                SimpleDateFormat date = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSS", Locale.US);
+                String currentDateTime = date.format(new Date());
+
+                File file = new File(Environment.
+                        getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
+                        "PNG_" + currentDateTime + ".png");
+
+                FileOutputStream out = null;
+                try {
+                    out = new FileOutputStream(file);
+                    bmp.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+                    // PNG is a loss-less format, the compression factor (100) is ignored
+                } catch (Exception e) {
+                    Log.e(TAG, "Something get wrong: " + e.toString());
+                    Log.e(TAG, "on file: " + file.toString());
+                    Toast.makeText(TrimapActivity.this, "Something get wrong: " + e.toString(), Toast.LENGTH_SHORT).show();
+                } finally {
+                    try {
+                        if (out != null) {
+                            out.flush();
+                            out.close();
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, e.toString());
+                    }
+                    processDialog.hide();
+
+                    Intent share = new Intent(Intent.ACTION_SEND);
+                    share.setType("image/png");
+
+                    share.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
+                    startActivity(Intent.createChooser(share, "Share Image"));
+                }
+            }
+        });
+    }
+
+    private void setImageViewBitmapWithMatrix(Matrix drawTrimapViewMatrix, ImageView imageView, Bitmap result) {
+        // init image to initial position
+        imageView.setScaleType(ImageView.ScaleType.FIT_START);
+        imageView.setImageBitmap(result);
+        imageView.invalidate();
+        // transform bitmap so it corresponds to current zoom and drag
+        Matrix imageViewMatrix = imageView.getImageMatrix();
+        imageView.setScaleType(ImageView.ScaleType.MATRIX);
+        imageViewMatrix.postConcat(drawTrimapViewMatrix);
+        imageView.invalidate();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent ev) {
+        // Let the ScaleGestureDetector inspect all events.
+        scaleGestureDetector.onTouchEvent(ev);
+        return true;
+    }
+
 
     private native void calculateAlphaMask(Bitmap image, Bitmap trimap, Bitmap outAlpha);
     private native void findBoundingBox(Bitmap trimap, Rect rect);
 
     static {
-//        System.loadLibrary("gnustl_shared");
-//        System.loadLibrary("reloc_library");
         System.loadLibrary("nativeAlphaMatte");
     }
 }

@@ -4,29 +4,29 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
-import android.graphics.Region;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewTreeObserver;
 
 import com.salat.viralcam.app.util.RectHelper;
 
 
-public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawListener {
+public class DrawTrimapView extends View {
 
     public interface DrawTrimapEvents {
         void onDrawStart(DrawTrimapView view);
         void onDrawEnd(DrawTrimapView view);
         void onStateChange(DrawTrimapView view, TrimapDrawState state);
     }
-    public DrawTrimapEvents listener;
+
+    public DrawTrimapEvents drawTrimapEventsListener;
 
     public static final int PAINT_STROKE_WIDTH = 8;
     public static final int PAINT_FINAL_TUNING_STROKE_WIDTH = PAINT_STROKE_WIDTH * 6;
@@ -58,6 +58,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
     private Paint foregroundPaint;
     private Paint alphaPaint;
 
+    private Matrix matrix = new Matrix();
 
     public DrawTrimapView(Context c) {
         super(c);
@@ -74,7 +75,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
     }
 
     private void init(Context context) {
-        setListener(null);
+        setDrawTrimapEventsListener(null);
         this.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
         path = new Path();
@@ -141,6 +142,7 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
 
         pathBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         pathCanvas = new Canvas(pathBitmap);
+        pathCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
         super.onSizeChanged(w, h, oldw, oldh);
     }
@@ -148,19 +150,23 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
     Rect tmpDrawRect = new Rect();
     @Override
     protected void onDraw(Canvas canvas) {
+        canvas.save();
+        canvas.setMatrix(matrix);
+
         if(state != TrimapDrawState.INIT)
             canvas.drawBitmap(trimapBitmap, 0, 0, alphaPaint);
 
-        if(!drawingPath)
-            return;
-
-        tmpDrawRect.set(pathBoundingBox);
-        RectHelper.addPadding(tmpDrawRect, (int) pathPaint.getStrokeWidth(), canvas.getWidth(), canvas.getHeight());
-        canvas.clipRect(tmpDrawRect);
-        canvas.drawBitmap(pathBitmap, 0, 0, alphaPaint);
+        if (drawingPath) {
+            tmpDrawRect.set(pathBoundingBox);
+            RectHelper.addPadding(tmpDrawRect, (int) pathPaint.getStrokeWidth(), canvas.getWidth(), canvas.getHeight());
+            canvas.clipRect(tmpDrawRect);
+            canvas.drawBitmap(pathBitmap, 0, 0, alphaPaint);
+        }
+        canvas.restore();
     }
 
 
+    Matrix inverseMatrix = new Matrix();
     private boolean drawingPath = false;
     private Rect pathBoundingBox = new Rect();
     private float pathOldX, pathOldY;
@@ -168,6 +174,8 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
     private static final float TOUCH_TOLERANCE = 4;
 
     private void touch_start(float x, float y) {
+        matrix.invert(inverseMatrix);
+
         pathBoundingBox.left = pathBitmap.getWidth();
         pathBoundingBox.top = pathBitmap.getHeight();
         pathBoundingBox.right = 0;
@@ -180,21 +188,26 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         pathInitX = (int) x;
         pathInitY = (int) y;
 
-        listener.onDrawStart(this);
+        drawTrimapEventsListener.onDrawStart(this);
     }
 
-    Rect touchMoveRect = new Rect();
+//    Rect touchMoveRect = new Rect();
+    float []touchMovePoint = {0f, 0f};
     private void touch_move(float x, float y) {
         drawingPath = true;
 
-        if(x < pathBoundingBox.left)
-            pathBoundingBox.left = (int) x;
-        if(x > pathBoundingBox.right)
-            pathBoundingBox.right = (int) x;
-        if(y < pathBoundingBox.top)
-            pathBoundingBox.top = (int) y;
-        if(y > pathBoundingBox.bottom)
-            pathBoundingBox.bottom = (int) y;
+        touchMovePoint[0] = x;
+        touchMovePoint[1] = y;
+        inverseMatrix.mapPoints(touchMovePoint);
+
+        if(touchMovePoint[0] < pathBoundingBox.left)
+            pathBoundingBox.left = (int) touchMovePoint[0];
+        if(touchMovePoint[0] > pathBoundingBox.right)
+            pathBoundingBox.right = (int) touchMovePoint[0];
+        if(touchMovePoint[1] < pathBoundingBox.top)
+            pathBoundingBox.top = (int) touchMovePoint[1];
+        if(touchMovePoint[1] > pathBoundingBox.bottom)
+            pathBoundingBox.bottom = (int) touchMovePoint[1];
 
         float dx = Math.abs(x - pathOldX);
         float dy = Math.abs(y - pathOldY);
@@ -207,10 +220,12 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
 //            );
 //            RectHelper.addPadding(touchMoveRect, (int) pathPaint.getStrokeWidth(), pathCanvas.getWidth(), pathCanvas.getHeight());
 
-//            pathCanvas.save();
+            pathCanvas.save();
 //            pathCanvas.clipRect(touchMoveRect, Region.Op.REPLACE);
+
+            pathCanvas.setMatrix(inverseMatrix);
             pathCanvas.drawLine(pathOldX, pathOldY, x, y, pathPaint);
-//            pathCanvas.restore();
+            pathCanvas.restore();
 
             path.lineTo(x, y);
             pathOldX = x;
@@ -226,6 +241,8 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
         path.lineTo(pathOldX, pathOldY);
         TrimapDrawState prevState = state;
 
+        trimapCanvas.save();
+        trimapCanvas.setMatrix(inverseMatrix);
         switch (state){
             case INIT: {
                 path.close();
@@ -245,8 +262,11 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
             case TUNING:
                 int initPixel = 0;
 
-                if(state == TrimapDrawState.TUNING)
-                    initPixel = trimapBitmap.getPixel(pathInitX, pathInitY);
+                if(state == TrimapDrawState.TUNING){
+                    float []point = {pathInitX, pathInitY};
+                    inverseMatrix.mapPoints(point);
+                    initPixel = trimapBitmap.getPixel((int)point[0], (int)point[1]);
+                }
                 if(state == TrimapDrawState.ONLY_BACKGROUND)
                     initPixel = backgroundPaint.getColor();
                 else if(state == TrimapDrawState.ONLY_FOREGROUND)
@@ -265,23 +285,25 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
                     trimapCanvas.drawPath(path, backgroundPaint);
                 break;
         }
+        trimapCanvas.restore();
+
         // kill this so we don't double draw
         path.reset();
-        listener.onDrawEnd(this);
+        drawTrimapEventsListener.onDrawEnd(this);
         if(prevState != state)
-            listener.onStateChange(this, state);
+            drawTrimapEventsListener.onStateChange(this, state);
     }
 
     @Override
     public boolean onTouchEvent(@NonNull MotionEvent event) {
-        float x = event.getX();
-        float y = event.getY();
+//        if(onTouchEventListener != null)
+//            onTouchEventListener.onTouchEvent(event);
 
-        if(trimapCanvas == null)
-            return true;
+        final float x = event.getX();
+        final float y = event.getY();
 
-        if (state == TrimapDrawState.DONE)
-            return true;
+        if(trimapCanvas == null || state == TrimapDrawState.DONE)
+            return false;
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
@@ -294,13 +316,9 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
                 touch_up();
                 break;
         }
+
         invalidate();
         return true;
-    }
-
-    @Override
-    public boolean onPreDraw() {
-        return false;
     }
 
     public TrimapDrawState getState() {
@@ -312,19 +330,12 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
     }
 
     public void setState(TrimapDrawState newState){
-        if(state == TrimapDrawState.INIT) {
-            throw new IllegalArgumentException("You are setting state to early. State cannot be before final tuning stage.");
-        }
-        if(newState == TrimapDrawState.INIT){
-            throw new IllegalArgumentException("State is not allowed to be set");
-        }
-
         state = newState;
     }
 
-    public void setListener(DrawTrimapEvents listener){
-        if(listener == null){
-            listener = new DrawTrimapEvents() {
+    public void setDrawTrimapEventsListener(DrawTrimapEvents drawTrimapEventsListener){
+        if(drawTrimapEventsListener == null){
+            drawTrimapEventsListener = new DrawTrimapEvents() {
                 @Override
                 public void onDrawStart(DrawTrimapView view) {
 
@@ -342,6 +353,17 @@ public class DrawTrimapView extends View implements ViewTreeObserver.OnPreDrawLi
             };
         }
 
-        this.listener = listener;
+        this.drawTrimapEventsListener = drawTrimapEventsListener;
+    }
+
+    public void setMatrix(Matrix newMatrix){
+        if(newMatrix == null)
+            throw new NullPointerException();
+
+        this.matrix = newMatrix;
+    }
+
+    public Matrix getImageMatrix(){
+        return matrix;
     }
 }
