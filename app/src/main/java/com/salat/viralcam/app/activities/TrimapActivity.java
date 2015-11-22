@@ -71,19 +71,12 @@ public class TrimapActivity extends Activity  {
         String backgroundImagePath = intent.getStringExtra(INTENT_EXTRA_BACKGROUND_IMAGE_PATH);
         String foregroundImagePath = intent.getStringExtra(INTENT_EXTRA_FOREGROUND_IMAGE_PATH);
 
-        if(backgroundImagePath == null || backgroundImagePath.isEmpty())
-            backgroundImagePath = Constants.TEST_IMAGE2_PATH;
-        if(foregroundImagePath == null || foregroundImagePath.isEmpty())
-            foregroundImagePath = Constants.TEST_IMAGE_PATH;
-
-        foreground = BitmapLoader.load(foregroundImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
-        background = BitmapLoader.load(backgroundImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
+        foreground = getBitmap(foregroundImagePath, Constants.TEST_IMAGE_PATH);
+        background = getBitmap(backgroundImagePath, Constants.TEST_IMAGE2_PATH);
 
         final ImageView imageView = (ImageView) findViewById(R.id.imageView);
 
         imageView.setImageBitmap(foreground);
-
-        imageView.setImageURI(Uri.parse(foregroundImagePath));
 
         final FloatingActionButton buttonMagic = (FloatingActionButton) findViewById(R.id.button_magic);
         buttonMagic.hide(false);
@@ -323,6 +316,12 @@ public class TrimapActivity extends Activity  {
                 drawTrimapView.setState(savedState);
             }
         });
+    }
+
+    private Bitmap getBitmap(String foregroundImagePath, int testImagePath) {
+        return foregroundImagePath == null || foregroundImagePath.isEmpty() ?
+                BitmapLoader.load(getResources(), testImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT) :
+                BitmapLoader.load(foregroundImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
     }
 
     private void buttonShareAction(final ImageView imageView) {

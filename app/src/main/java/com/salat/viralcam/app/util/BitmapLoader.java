@@ -1,6 +1,7 @@
 package com.salat.viralcam.app.util;
 
 
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -49,5 +50,26 @@ public class BitmapLoader {
         // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false;
         return BitmapFactory.decodeFile(path, options);
+    }
+
+
+    public static Bitmap load(Resources resources, int resourceid, int reqWidth, int reqHeight) {
+
+        // First decode with inJustDecodeBounds=true to check dimensions
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeResource(resources, resourceid, options);
+
+        // Calculate inSampleSize
+        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+
+        Log.e(TAG, resourceid +
+                " [" + options.outWidth / options.inSampleSize + ", " + options.outHeight / options.inSampleSize + "]" +
+                " (" + options.inSampleSize + ")");
+
+
+        // Decode bitmap with inSampleSize set
+        options.inJustDecodeBounds = false;
+        return BitmapFactory.decodeResource(resources, resourceid, options);
     }
 }

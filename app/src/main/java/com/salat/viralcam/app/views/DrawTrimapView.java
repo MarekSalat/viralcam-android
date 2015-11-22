@@ -10,6 +10,7 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
+import android.graphics.Region;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -191,14 +192,10 @@ public class DrawTrimapView extends View {
         drawTrimapEventsListener.onDrawStart(this);
     }
 
-//    Rect touchMoveRect = new Rect();
+    Rect touchMoveRect = new Rect();
     float []touchMovePoint = {0f, 0f};
     private void touch_move(float x, float y) {
         drawingPath = true;
-
-        touchMovePoint[0] = x;
-        touchMovePoint[1] = y;
-        inverseMatrix.mapPoints(touchMovePoint);
 
         if(touchMovePoint[0] < pathBoundingBox.left)
             pathBoundingBox.left = (int) touchMovePoint[0];
@@ -212,18 +209,22 @@ public class DrawTrimapView extends View {
         float dx = Math.abs(x - pathOldX);
         float dy = Math.abs(y - pathOldY);
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-//            touchMoveRect.set(
-//                    (int)Math.min(pathOldX, x),
-//                    (int)Math.min(pathOldY, y),
-//                    (int)Math.max(pathOldX, x),
-//                    (int)Math.max(pathOldY, y)
-//            );
-//            RectHelper.addPadding(touchMoveRect, (int) pathPaint.getStrokeWidth(), pathCanvas.getWidth(), pathCanvas.getHeight());
+            touchMovePoint[0] = x;
+            touchMovePoint[1] = y;
+            inverseMatrix.mapPoints(touchMovePoint);
+
+            touchMoveRect.set(
+                    (int)Math.min(pathOldX, x),
+                    (int)Math.min(pathOldY, y),
+                    (int)Math.max(pathOldX, x),
+                    (int)Math.max(pathOldY, y)
+            );
+            RectHelper.addPadding(touchMoveRect, (int) pathPaint.getStrokeWidth(), pathCanvas.getWidth(), pathCanvas.getHeight());
 
             pathCanvas.save();
-//            pathCanvas.clipRect(touchMoveRect, Region.Op.REPLACE);
 
             pathCanvas.setMatrix(inverseMatrix);
+            pathCanvas.clipRect(touchMoveRect, Region.Op.REPLACE);
             pathCanvas.drawLine(pathOldX, pathOldY, x, y, pathPaint);
             pathCanvas.restore();
 
@@ -296,9 +297,6 @@ public class DrawTrimapView extends View {
 
     @Override
     public boolean onTouchEvent(@NonNull MotionEvent event) {
-//        if(onTouchEventListener != null)
-//            onTouchEventListener.onTouchEvent(event);
-
         final float x = event.getX();
         final float y = event.getY();
 

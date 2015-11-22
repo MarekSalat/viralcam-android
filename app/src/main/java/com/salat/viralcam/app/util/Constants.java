@@ -1,10 +1,9 @@
 package com.salat.viralcam.app.util;
 
-import android.annotation.TargetApi;
-import android.os.Build;
-import android.util.Size;
+import android.net.Uri;
 
 import com.salat.viralcam.app.BuildConfig;
+import com.salat.viralcam.app.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -28,8 +27,8 @@ public class Constants {
     public static final int IMAGE_OPTIMAL_WIDTH = 400;
     public static final int IMAGE_OPTIMAL_HEIGHT = 400;
 
-    public static final String TEST_IMAGE_PATH = "/storage/emulated/0/Download/cb55df3e9a79d71214e8e0c4c35f565f.1000x750x1.jpg";
-    public static final String TEST_IMAGE2_PATH = "/storage/emulated/0/Download/JPEG_2015_11_01_17_55_45_865.jpg";
+    public static final int TEST_IMAGE_PATH = R.raw.pizza_tower;
+    public static final int TEST_IMAGE2_PATH = R.raw.panda;
 
     /**
      * If true use only camera api introduces before LOLLIPOP (camera), do not use camera2 api.
