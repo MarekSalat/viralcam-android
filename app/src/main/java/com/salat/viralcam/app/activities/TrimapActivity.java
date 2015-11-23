@@ -13,6 +13,7 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -71,8 +72,11 @@ public class TrimapActivity extends Activity  {
         String backgroundImagePath = intent.getStringExtra(INTENT_EXTRA_BACKGROUND_IMAGE_PATH);
         String foregroundImagePath = intent.getStringExtra(INTENT_EXTRA_FOREGROUND_IMAGE_PATH);
 
-        foreground = getBitmap(foregroundImagePath, Constants.TEST_IMAGE_PATH);
-        background = getBitmap(backgroundImagePath, Constants.TEST_IMAGE2_PATH);
+        int foregroundResource = parseInteger(foregroundImagePath, -1);
+        int backgroundResource = parseInteger(backgroundImagePath, -1);
+
+        foreground = foregroundResource > 0 ? getBitmap(null, foregroundResource) : getBitmap(foregroundImagePath, Constants.TEST_IMAGE_PATH);
+        background = backgroundResource > 0 ? getBitmap(null, backgroundResource) : getBitmap(backgroundImagePath, Constants.TEST_IMAGE2_PATH);
 
         final ImageView imageView = (ImageView) findViewById(R.id.imageView);
 
@@ -318,6 +322,20 @@ public class TrimapActivity extends Activity  {
         });
     }
 
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY : 0));
+        }
+    }
+
     private Bitmap getBitmap(String foregroundImagePath, int testImagePath) {
         return foregroundImagePath == null || foregroundImagePath.isEmpty() ?
                 BitmapLoader.load(getResources(), testImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT) :
@@ -386,6 +404,15 @@ public class TrimapActivity extends Activity  {
         // Let the ScaleGestureDetector inspect all events.
         scaleGestureDetector.onTouchEvent(ev);
         return true;
+    }
+
+    public static int parseInteger( String string, int defaultValue ) {
+        try {
+            return Integer.parseInt(string);
+        }
+        catch (NumberFormatException e ) {
+            return defaultValue;
+        }
     }
 
 

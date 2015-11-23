@@ -90,25 +90,11 @@ public class ImageWithMask extends View {
         canvas.drawCircle(mBitmapRect.width() / 2, mBitmapRect.height() / 2, mBitmapRect.height() / 3, paint);
     }
 
-    public void setMask(Bitmap mask){
-        if(mMask != null){
-            mMask.recycle();
-            mMask = null;
-        }
-
-        mMask = mask;
-    }
-
     @Override
     protected void onSizeChanged(int newWidth, int newHeight, int oldWidth, int oldHeight) {
         if(mBitmap != null){
             mBitmap.recycle();
             mBitmap = null;
-        }
-
-        if(mMask != null){
-            mMask.recycle();
-            mMask = null;
         }
 
         newWidth /= 2;

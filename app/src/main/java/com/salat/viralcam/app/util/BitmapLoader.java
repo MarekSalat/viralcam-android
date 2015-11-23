@@ -53,23 +53,22 @@ public class BitmapLoader {
     }
 
 
-    public static Bitmap load(Resources resources, int resourceid, int reqWidth, int reqHeight) {
-
+    public static Bitmap load(Resources resources, int resourceId, int reqWidth, int reqHeight) {
         // First decode with inJustDecodeBounds=true to check dimensions
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
-        BitmapFactory.decodeResource(resources, resourceid, options);
+        BitmapFactory.decodeResource(resources, resourceId, options);
 
         // Calculate inSampleSize
         options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
 
-        Log.e(TAG, resourceid +
+        Log.e(TAG, resourceId +
                 " [" + options.outWidth / options.inSampleSize + ", " + options.outHeight / options.inSampleSize + "]" +
                 " (" + options.inSampleSize + ")");
 
 
         // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false;
-        return BitmapFactory.decodeResource(resources, resourceid, options);
+        return BitmapFactory.decodeResource(resources, resourceId, options);
     }
 }

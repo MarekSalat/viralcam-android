@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="images" >
+        <item>Panda</item>
+        <item>Pizza tower</item>
+        <item>Game of thrones throne</item>
+        <item>Star wars</item>
+        <item>Browse…</item>
+    </string-array>
+</resources>
