@@ -146,8 +146,32 @@ public class TrimapActivity extends Activity  {
                         RectHelper.addPadding(drawnTrimapBoundingBox, BOUNDINGBOX_PADDING, foreground.getWidth(), foreground.getHeight());
                         final Rect foregroundBoundingBox = RectHelper.scale(drawnTrimapBoundingBox, scale);
 
+                        if(foregroundBoundingBox.isEmpty() ||
+                            foregroundBoundingBox.width() <= 0 ||
+                            foregroundBoundingBox.height() <= 0 ||
+                            (foregroundBoundingBox.width() < 32 && foregroundBoundingBox.height() < 32))
+                        {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    // drawTrimapView contains clear matrix with current scale and translation
+                                    Matrix drawTrimapViewMatrix = drawTrimapView.getImageMatrix();
+                                    setImageViewBitmapWithMatrix(drawTrimapViewMatrix, imageView, background);
+
+                                    drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DONE);
+                                    drawTrimapView.setVisibility(View.INVISIBLE);
+                                    buttonShare.setVisibility(View.VISIBLE);
+
+                                    processDialog.hide();
+                                }
+                            });
+                            return;
+                        }
+
                         // create bitmaps for image, trimap and final alpha
                         final Rect foregroundRect = new Rect(0, 0, foregroundBoundingBox.width(), foregroundBoundingBox.height());
+
+
                         final Bitmap image = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ARGB_8888);
                         final Bitmap trimap = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ARGB_8888);
                         final Bitmap alpha = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ALPHA_8);

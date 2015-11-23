@@ -154,8 +154,8 @@ public class DrawTrimapView extends View {
         canvas.save();
         canvas.setMatrix(matrix);
 
-        if(state != TrimapDrawState.INIT)
-            canvas.drawBitmap(trimapBitmap, 0, 0, alphaPaint);
+        //if(state != TrimapDrawState.INIT)
+        canvas.drawBitmap(trimapBitmap, 0, 0, alphaPaint);
 
         if (drawingPath) {
             tmpDrawRect.set(pathBoundingBox);
