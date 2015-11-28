@@ -55,6 +55,9 @@ public class ImageWithMask extends View {
     }
 
     public void setImage(Bitmap image){
+        if(image == null)
+            throw new NullPointerException("Image cannot be null.");
+
         if(mImage != null){
             mImage.recycle();
             mImage = null;

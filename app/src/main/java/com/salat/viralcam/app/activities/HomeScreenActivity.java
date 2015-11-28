@@ -5,24 +5,26 @@ import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.fragments.CameraLollipopFragment;
 import com.salat.viralcam.app.util.BitmapLoader;
 import com.salat.viralcam.app.util.Constants;
-import com.salat.viralcam.app.util.RealPathUtil;
 import com.salat.viralcam.app.views.ImageWithMask;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+
+import java.io.IOException;
 
 import fragments.CameraFragment;
 import fragments.CameraOldVersionsFragment;
@@ -30,9 +32,9 @@ import fragments.CameraOldVersionsFragment;
 public class HomeScreenActivity extends Activity {
     private static final String TAG = "HomeScreenActivity";
     private static final int PICK_IMAGE_REQUEST = 1;
-    public static final String KEY_BACKGROUND_PATH = "HomeScreenActivity.KEY_BACKGROUND_PATH";
+    public static final String KEY_BACKGROUND_URI = "HomeScreenActivity.KEY_BACKGROUND_URI";
     private static final String CAMERA_FRAGMENT = "CAMERA_FRAGMENT";
-    private String backgroundImagePath;
+    private Uri imageUri;
     private AlertDialog dialog;
 
 
@@ -46,24 +48,19 @@ public class HomeScreenActivity extends Activity {
 
         setContentView(R.layout.activity_home_screen);
 
-        if(savedInstanceState != null){
-            backgroundImagePath = savedInstanceState.getString(KEY_BACKGROUND_PATH);
+        if(savedInstanceState != null && savedInstanceState.getString(KEY_BACKGROUND_URI) != null && !savedInstanceState.getString(KEY_BACKGROUND_URI).isEmpty()){
+            imageUri =  Uri.parse(savedInstanceState.getString(KEY_BACKGROUND_URI));
 
-            if(isBackgroundSelected()){
+            if(isImageSelected()){
                 FrameLayout layout = (FrameLayout) findViewById(R.id.container);
                 layout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                     @Override
                     public void onGlobalLayout() {
-                        int resourceId = 0;
                         try {
-                            resourceId = Integer.parseInt(backgroundImagePath);
+                            setImageViewBackground(imageUri);
+                        } catch (IOException e) {
+                            dialog.show();
                         }
-                        catch (NumberFormatException e){}
-
-                        if(resourceId == 0)
-                            setImageViewBackground(backgroundImagePath);
-                        else
-                            setImageViewBackground(resourceId);
                     }
                 });
             }
@@ -85,7 +82,7 @@ public class HomeScreenActivity extends Activity {
         }
 
         final FloatingActionButton takePictureButton = (FloatingActionButton) findViewById(R.id.take_picture_button);
-        if(!isBackgroundSelected())
+        if(!isImageSelected())
             takePictureButton.setVisibility(View.INVISIBLE);
 
         final Fragment finalCameraFragment = cameraFragment;
@@ -97,8 +94,8 @@ public class HomeScreenActivity extends Activity {
                     @Override
                     public void onCaptureComplete(String foregroundImagePath, Uri uri) {
                         Intent intent = new Intent(HomeScreenActivity.this, TrimapActivity.class);
-                        intent.putExtra(TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_PATH, foregroundImagePath);
-                        intent.putExtra(TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_PATH, backgroundImagePath);
+                        intent.putExtra(TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_URI, uri.toString());
+                        intent.putExtra(TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_URI, imageUri.toString());
                         startActivity(intent);
                     }
                 });
@@ -141,8 +138,13 @@ public class HomeScreenActivity extends Activity {
                     }
                 }
 
-                backgroundImagePath = Integer.toString(resourceId);
-                setImageViewBackground(resourceId);
+                imageUri = Constants.getUriFromResource(getResources(), resourceId);
+                try {
+                    setImageViewBackground(imageUri);
+                } catch (IOException e) {
+                    // image must be there for sure
+                    Log.e(TAG, e.toString());
+                }
             }
         });
 
@@ -153,7 +155,7 @@ public class HomeScreenActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if(!isBackgroundSelected()){
+        if(!isImageSelected()){
             dialog.show();
         }
     }
@@ -165,9 +167,13 @@ public class HomeScreenActivity extends Activity {
         }
 
         Uri uri = data.getData();
-        backgroundImagePath = RealPathUtil.getRealPathFromURI(this, uri);
+        imageUri = uri;
 
-        setImageViewBackground(backgroundImagePath);
+        try {
+            setImageViewBackground(uri);
+        } catch (IOException e) {
+            Log.e(TAG, e.toString());
+        }
 
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -175,8 +181,8 @@ public class HomeScreenActivity extends Activity {
     @Override
     protected void onSaveInstanceState(Bundle outState)
     {
-        if(isBackgroundSelected())
-            outState.putString(KEY_BACKGROUND_PATH, backgroundImagePath);
+        if(isImageSelected())
+            outState.putString(KEY_BACKGROUND_URI, imageUri.toString());
         super.onSaveInstanceState(outState);
     }
 
@@ -194,23 +200,17 @@ public class HomeScreenActivity extends Activity {
         }
     }
 
-    private void setImageViewBackground(String backgroundImagePath) {
+    private void setImageViewBackground(Uri uri) throws IOException {
+        if(uri == null)
+            throw new IllegalArgumentException("Uri cannot be null.");
+
         ImageWithMask imageView = (ImageWithMask) findViewById(R.id.imageView);
-        imageView.setImage(
-                BitmapLoader.load(backgroundImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT)
-        );
+        Bitmap bitmap = BitmapLoader.load(getContentResolver(), uri, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
+        imageView.setImage(bitmap);
         imageView.invalidate();
     }
 
-    private void setImageViewBackground(int resourceId) {
-        ImageWithMask imageView = (ImageWithMask) findViewById(R.id.imageView);
-        imageView.setImage(
-                BitmapLoader.load(getResources(), resourceId, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT)
-        );
-        imageView.invalidate();
-    }
-
-    private boolean isBackgroundSelected(){
-        return backgroundImagePath != null && !backgroundImagePath.isEmpty();
+    private boolean isImageSelected(){
+        return imageUri != null;
     }
 }

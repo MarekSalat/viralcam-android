@@ -34,6 +34,7 @@ import com.salat.viralcam.app.util.RectHelper;
 import com.salat.viralcam.app.views.DrawTrimapView;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -45,8 +46,8 @@ public class TrimapActivity extends Activity  {
     public static final float MIN_SCALE_FACTOR = 1f;
     public static final float MAX_SCALE_FACTOR = 5f;
 
-    public static final String INTENT_EXTRA_BACKGROUND_IMAGE_PATH = "TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_PATH";
-    public static final String INTENT_EXTRA_FOREGROUND_IMAGE_PATH = "TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_PATH";
+    public static final String INTENT_EXTRA_BACKGROUND_IMAGE_URI = "TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_URI";
+    public static final String INTENT_EXTRA_FOREGROUND_IMAGE_URI = "TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_URI";
     public static final int BOUNDINGBOX_PADDING = 4;
 
     private ProgressDialog processDialog;
@@ -69,14 +70,22 @@ public class TrimapActivity extends Activity  {
         processDialog.setInverseBackgroundForced(false);
 
         Intent intent = getIntent();
-        String backgroundImagePath = intent.getStringExtra(INTENT_EXTRA_BACKGROUND_IMAGE_PATH);
-        String foregroundImagePath = intent.getStringExtra(INTENT_EXTRA_FOREGROUND_IMAGE_PATH);
+        String foregroundUriString = intent.getStringExtra(INTENT_EXTRA_FOREGROUND_IMAGE_URI);
+        String backgroundUriString = intent.getStringExtra(INTENT_EXTRA_BACKGROUND_IMAGE_URI);
 
-        int foregroundResource = parseInteger(foregroundImagePath, -1);
-        int backgroundResource = parseInteger(backgroundImagePath, -1);
+        Uri defaultForegroundUri = Constants.getUriFromResource(getResources(), R.raw.pizza_tower);
+        Uri defaultBackgroundUri = Constants.getUriFromResource(getResources(), R.raw.panda);
 
-        foreground = foregroundResource > 0 ? getBitmap(null, foregroundResource) : getBitmap(foregroundImagePath, Constants.TEST_IMAGE_PATH);
-        background = backgroundResource > 0 ? getBitmap(null, backgroundResource) : getBitmap(backgroundImagePath, Constants.TEST_IMAGE2_PATH);
+        Uri foregroundUri = foregroundUriString == null || foregroundUriString.isEmpty() ? defaultForegroundUri : Uri.parse(foregroundUriString);
+        Uri backgroundUri = backgroundUriString == null || backgroundUriString.isEmpty() ? defaultBackgroundUri : Uri.parse(backgroundUriString);
+
+        foreground = getBitmap(foregroundUri, defaultForegroundUri);
+        background = getBitmap(backgroundUri, defaultBackgroundUri);
+
+        if(foreground == null || background == null){
+            Toast.makeText(this, "Cannot load images", Toast.LENGTH_SHORT).show();
+            finish();
+        }
 
         final ImageView imageView = (ImageView) findViewById(R.id.imageView);
 
@@ -360,10 +369,18 @@ public class TrimapActivity extends Activity  {
         }
     }
 
-    private Bitmap getBitmap(String foregroundImagePath, int testImagePath) {
-        return foregroundImagePath == null || foregroundImagePath.isEmpty() ?
-                BitmapLoader.load(getResources(), testImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT) :
-                BitmapLoader.load(foregroundImagePath, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
+    private Bitmap getBitmap(Uri imageUri, Uri defaultImageUri) {
+        Bitmap result = null;
+        try {
+            result = BitmapLoader.load(getContentResolver(), imageUri, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
+        } catch (IOException e) {
+            try {
+                result = BitmapLoader.load(getContentResolver(), defaultImageUri, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
+            } catch (IOException e1) {
+                Log.e(TAG, e.toString());
+            }
+        }
+        return result;
     }
 
     private void buttonShareAction(final ImageView imageView) {
