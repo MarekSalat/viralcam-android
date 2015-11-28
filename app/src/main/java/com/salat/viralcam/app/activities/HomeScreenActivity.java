@@ -11,12 +11,10 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -87,7 +85,6 @@ public class HomeScreenActivity extends Activity {
         takePictureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                takePictureButton.setEnabled(false);
                 ((CameraFragment) finalCameraFragment).takePicture(new CameraLollipopFragment.OnCaptureCompleted() {
 
                     @Override
@@ -129,8 +126,8 @@ public class HomeScreenActivity extends Activity {
                     case 3:  resourceId = R.raw.star_warse; break;
 
                     default:{
-                        Intent intent = new Intent();
 
+                        Intent intent = new Intent();
                         // Show only images, no videos or anything else
                         intent.setType("image/*");
                         intent.setAction(Intent.ACTION_GET_CONTENT);
@@ -156,7 +153,6 @@ public class HomeScreenActivity extends Activity {
         if(!isImageSelected()){
             dialog.show();
         }
-        findViewById(R.id.take_picture_button).setEnabled(true);
     }
 
     @Override
