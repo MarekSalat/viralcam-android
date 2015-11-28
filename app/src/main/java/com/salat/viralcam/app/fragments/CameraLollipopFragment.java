@@ -1081,6 +1081,10 @@ public class CameraLollipopFragment extends Fragment implements View.OnClickList
             // If we already triggered a pre-capture sequence, or are in a state where we cannot
             // do this, return immediately.
             if (mState != STATE_PREVIEW) {
+                callback.onCaptureComplete(null, null);
+                Log.e(TAG, "State must differ fom STATE_PREVIEW");
+                Toast.makeText(getActivity(), "Capturing failed. Have you tried to turn it off and on again?", Toast.LENGTH_SHORT).show();
+
                 return;
             }
 
@@ -1111,7 +1115,9 @@ public class CameraLollipopFragment extends Fragment implements View.OnClickList
                 mCaptureSession.capture(mPreviewRequestBuilder.build(), mPreCaptureCallback,
                         mBackgroundHandler);
             } catch (CameraAccessException e) {
-                e.printStackTrace();
+                callback.onCaptureComplete(null, null);
+                Log.e(TAG, "takePicture failed" + e.toString());
+                Toast.makeText(getActivity(), "Capturing failed. Have you tried to turn it off and on again?", Toast.LENGTH_SHORT).show();
             }
         }
     }

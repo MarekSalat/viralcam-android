@@ -3,6 +3,7 @@ package fragments;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.hardware.Camera;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.app.Fragment;
@@ -458,12 +459,19 @@ public class CameraOldVersionsFragment extends Fragment implements CameraFragmen
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
-                    callback.onCaptureComplete(path, null);
+                    callback.onCaptureComplete(path, Uri.fromFile(file));
                 }
                 Log.d(TAG, "onPictureTaken - jpeg");
             }
         };
 
-        mPreview.mCamera.takePicture(null, null, jpegCallback);
+
+        try {
+            mPreview.mCamera.takePicture(null, null, jpegCallback);
+        } catch (Exception e) {
+            callback.onCaptureComplete(null, null);
+            Log.e(TAG, "takePicture failed" + e.toString());
+            Toast.makeText(getActivity(), "Capturing failed. Have you tried to turn it off and on again?", Toast.LENGTH_SHORT).show();
+        }
     }
 }

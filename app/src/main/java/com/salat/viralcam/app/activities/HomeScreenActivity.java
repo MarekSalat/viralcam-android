@@ -89,14 +89,19 @@ public class HomeScreenActivity extends Activity {
         takePictureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                takePictureButton.setEnabled(false);
                 ((CameraFragment) finalCameraFragment).takePicture(new CameraLollipopFragment.OnCaptureCompleted() {
 
                     @Override
                     public void onCaptureComplete(String foregroundImagePath, Uri uri) {
-                        Intent intent = new Intent(HomeScreenActivity.this, TrimapActivity.class);
-                        intent.putExtra(TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_URI, uri.toString());
-                        intent.putExtra(TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_URI, imageUri.toString());
-                        startActivity(intent);
+                        takePictureButton.setEnabled(true);
+
+                        if(foregroundImagePath != null && uri != null){
+                            Intent intent = new Intent(HomeScreenActivity.this, TrimapActivity.class);
+                            intent.putExtra(TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_URI, uri.toString());
+                            intent.putExtra(TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_URI, imageUri.toString());
+                            startActivity(intent);
+                        }
                     }
                 });
             }
@@ -158,6 +163,7 @@ public class HomeScreenActivity extends Activity {
         if(!isImageSelected()){
             dialog.show();
         }
+        findViewById(R.id.take_picture_button).setEnabled(true);
     }
 
     @Override
