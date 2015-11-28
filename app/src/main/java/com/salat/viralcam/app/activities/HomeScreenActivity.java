@@ -15,16 +15,23 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.view.GestureDetectorCompat;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import java.io.IOException;
 
@@ -38,6 +45,7 @@ public class HomeScreenActivity extends Activity {
     private static final String CAMERA_FRAGMENT = "CAMERA_FRAGMENT";
     private Uri imageUri;
     private AlertDialog dialog;
+    private GestureDetectorCompat mDetector;
 
 
     @Override
@@ -57,9 +65,13 @@ public class HomeScreenActivity extends Activity {
             if(isImageSelected()){
                 FrameLayout layout = (FrameLayout) findViewById(R.id.container);
                 layout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    boolean isImageSet = false;
                     @Override
                     public void onGlobalLayout() {
-                        setImageViewBackground(imageUri);
+                        if(!isImageSet)
+                            setImageViewBackground(imageUri);
+
+                        isImageSet = true;
                     }
                 });
             }
@@ -146,6 +158,16 @@ public class HomeScreenActivity extends Activity {
             }
         });
 
+        final ImageWithMask imageView = (ImageWithMask) findViewById(R.id.imageView);
+        mDetector = new GestureDetectorCompat(this, new GestureDetector.SimpleOnGestureListener(){
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                float alpha = imageView.getAlpha();
+                alpha += distanceX / 100;
+                imageView.setAlpha(Math.max(0.2f, Math.min(0.95f, alpha)));
+                return true;
+            }
+        });
 
         dialog = builder.create();
     }
@@ -156,6 +178,13 @@ public class HomeScreenActivity extends Activity {
         if(!isImageSelected()){
             dialog.show();
         }
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event){
+        this.mDetector.onTouchEvent(event);
+        // Be sure to call the superclass implementation
+        return super.onTouchEvent(event);
     }
 
     @Override
@@ -250,5 +279,16 @@ public class HomeScreenActivity extends Activity {
 
     private boolean isImageSelected(){
         return imageUri != null;
+    }
+
+    private boolean hasImage(@NonNull ImageView view) {
+        Drawable drawable = view.getDrawable();
+        boolean hasImage = (drawable != null);
+
+        if (hasImage && (drawable instanceof BitmapDrawable)) {
+            hasImage = ((BitmapDrawable)drawable).getBitmap() != null;
+        }
+
+        return hasImage;
     }
 }

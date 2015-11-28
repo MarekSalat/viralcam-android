@@ -2,8 +2,8 @@ apply plugin: 'com.android.model.application'
 
 
 model {
-    def projectVersionCode = 101
-    def projectVersionName = "1.1"
+    def projectVersionCode = 102
+    def projectVersionName = "1.2"
     def projectApplicationID =  "com.salat.viralcam.app"
 
     android {
@@ -51,9 +51,8 @@ model {
     android.productFlavors {
         create("alpha") {
             versionName = projectVersionName + "-alpha"
-            applicationId = projectApplicationID + ".alpha"
+            applicationId = projectApplicationID
         }
-
 
 //        create("arm7") {
 //            ndk.abiFilters += "armeabi-v7a"
