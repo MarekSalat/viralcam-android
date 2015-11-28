@@ -47,6 +47,7 @@ public class HomeScreenActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        onWindowFocusChanged(true);
 
         setContentView(R.layout.activity_home_screen);
 
@@ -222,8 +223,13 @@ public class HomeScreenActivity extends Activity {
                 try {
                     bitmap = BitmapLoader.load(getContentResolver(), uri, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
                 } catch (IOException e) {
-                    Log.e(TAG, "Image cannot be loader. " + e.toString());
-                    dialog.show();
+                    Log.e(TAG, "Image cannot be loaded. " + e.toString() + ": " +  e.getMessage());
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            dialog.show();
+                        }
+                    });
                     return null;
                 }
 
