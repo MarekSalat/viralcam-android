@@ -26,4 +26,20 @@
     <string name="clear">Clear</string>
     <string name="title_activity_test_sanbox">TestSanboxActivity</string>
     <string name="select_background">Select background</string>
+    <string name="title_activity_capture_scene">CaptureSceneActivity</string>
+
+
+    <string name="changelog_dialog_title">What\'s new in %1$s</string>
+    <string name="changelog_dialog_text"><![CDATA[
+        <h3>Features</h3>
+        <ul>
+            <li>What\'s new dialog will be shown after update when you start application.</li>
+        </ul>
+        <hr/>
+        <h3>Fixed bugs</h3>
+        <ul>
+             <li>Kitkat (and lover) devices had problems with taking pictures on portrait mode. Please let me know if the problem persists.</li>
+        </ul>
+    ]]></string>
+
 </resources>
