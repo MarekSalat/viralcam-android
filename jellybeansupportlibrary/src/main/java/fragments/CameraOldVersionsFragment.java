@@ -88,14 +88,26 @@ public class CameraOldVersionsFragment extends Fragment implements CameraFragmen
                 mCameraId = 0;
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-                mCamera = Camera.open(mCameraId);
-            } else {
-                mCamera = Camera.open();
+            try {
+                releaseCameraAndPreview();
+                mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
+            } catch (Exception e) {
+                Log.e(TAG, "failed to open Camera. " + e.toString() + ": " + e.getMessage());
+                e.printStackTrace();
+                Toast.makeText(activity, "Camera cannot be opened. Please check you have granted all permission needed.", Toast.LENGTH_LONG).show();
+                activity.finish();
             }
+
             Camera.Parameters cameraParams = mCamera.getParameters();
             mPreviewSizeList = cameraParams.getSupportedPreviewSizes();
             mPictureSizeList = cameraParams.getSupportedPictureSizes();
+        }
+
+        private void releaseCameraAndPreview() {
+            if (mCamera != null) {
+                mCamera.release();
+                mCamera = null;
+            }
         }
 
         @Override
@@ -306,48 +318,50 @@ public class CameraOldVersionsFragment extends Fragment implements CameraFragmen
         }
 
         protected void configureCameraParameters(Camera.Parameters cameraParams, boolean portrait) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) { // for 2.1 and before
-                if (portrait) {
-                    cameraParams.set(CAMERA_PARAM_ORIENTATION, CAMERA_PARAM_PORTRAIT);
-                } else {
-                    cameraParams.set(CAMERA_PARAM_ORIENTATION, CAMERA_PARAM_LANDSCAPE);
-                }
-            } else { // for 2.2 and later
-                int angle;
-                Display display = mActivity.getWindowManager().getDefaultDisplay();
-                switch (display.getRotation()) {
-                    case Surface.ROTATION_0: // This is display orientation
-                        angle = 90; // This is camera orientation
-                        break;
-                    case Surface.ROTATION_90:
-                        angle = 0;
-                        break;
-                    case Surface.ROTATION_180:
-                        angle = 270;
-                        break;
-                    case Surface.ROTATION_270:
-                        angle = 180;
-                        break;
-                    default:
-                        angle = 90;
-                        break;
-                }
-                Log.v(LOG_TAG, "angle: " + angle);
-                // display orientation does not change result image orientation
-                mCamera.setDisplayOrientation(angle);
-                // todo: verify: but this command does it. But maybe I will need (info.orientation - degrees + 360) % 360;
-                // see http://stackoverflow.com/questions/15808719/controlling-the-camera-to-take-pictures-in-portrait-doesnt-rotate-the-final-ima
-                cameraParams.setRotation(angle);
-            }
+            int angle = getCameraDisplayOrientation(mActivity, mCameraId, mCamera);
+
+            cameraParams.setRotation(angle);
+            mCamera.setDisplayOrientation(angle);
 
             cameraParams.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
             cameraParams.setPictureSize(mPictureSize.width, mPictureSize.height);
+
+            if (cameraParams.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                cameraParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            }
+
             if (DEBUGGING) {
                 Log.v(LOG_TAG, "Preview Actual Size - w: " + mPreviewSize.width + ", h: " + mPreviewSize.height);
                 Log.v(LOG_TAG, "Picture Actual Size - w: " + mPictureSize.width + ", h: " + mPictureSize.height);
             }
 
             mCamera.setParameters(cameraParams);
+        }
+
+        public static int getCameraDisplayOrientation(Activity activity,
+                                                       int cameraId, android.hardware.Camera camera) {
+            android.hardware.Camera.CameraInfo info =
+                    new android.hardware.Camera.CameraInfo();
+            android.hardware.Camera.getCameraInfo(cameraId, info);
+            int rotation = activity.getWindowManager().getDefaultDisplay()
+                    .getRotation();
+            int degrees = 0;
+            switch (rotation) {
+                case Surface.ROTATION_0: degrees = 0; break;
+                case Surface.ROTATION_90: degrees = 90; break;
+                case Surface.ROTATION_180: degrees = 180; break;
+                case Surface.ROTATION_270: degrees = 270; break;
+            }
+
+            int result;
+            if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                result = (info.orientation + degrees) % 360;
+                result = (360 - result) % 360;  // compensate the mirror
+            } else {  // back-facing
+                result = (info.orientation - degrees + 360) % 360;
+            }
+
+            return result;
         }
 
         @Override
@@ -448,18 +462,20 @@ public class CameraOldVersionsFragment extends Fragment implements CameraFragmen
                 File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "JPEG_" + time + ".jpg");
 
                 String path = file.getPath();
+                Uri uri = Uri.fromFile(file);
 
                 try {
                     outStream = new FileOutputStream(path);
                     outStream.write(data);
                     outStream.close();
                     Log.d(TAG, "onPictureTaken - wrote bytes: " + data.length);
-                } catch (FileNotFoundException e) {
+                } catch (Exception e) {
+                    Log.d(TAG, "Image saving failed " + e.toString() + ": " + e.getMessage());
                     e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    path = null;
+                    uri = null;
                 } finally {
-                    callback.onCaptureComplete(path, Uri.fromFile(file));
+                    callback.onCaptureComplete(path, uri);
                 }
                 Log.d(TAG, "onPictureTaken - jpeg");
             }

@@ -13,7 +13,7 @@ model {
         defaultConfig.with {
             applicationId = projectApplicationID
             minSdkVersion.apiLevel = 16
-            targetSdkVersion.apiLevel = 23
+            //targetSdkVersion.apiLevel = 23
             versionCode = projectVersionCode
             versionName = projectVersionName
         }
