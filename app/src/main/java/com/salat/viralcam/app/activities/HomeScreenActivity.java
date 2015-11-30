@@ -49,8 +49,10 @@ import fragments.CameraOldVersionsFragment;
 
 public class HomeScreenActivity extends AppCompatActivity {
     private static final int CAPTURE_SCENE_RESULT = 42;
+
     private static final String PRIVATE_PREF = "viralcam_private_pref";
-    private static final String VERSION_KEY = "version_number";
+    private static final String VERSION_KEY = "VERSION_KEY";
+    private static final String INTRO_HAS_BEEN_SHOWN = "INTRO_HAS_BEEN_SHOWN";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,11 +60,35 @@ public class HomeScreenActivity extends AppCompatActivity {
 
         if (shouldBeWhatsNewShown()) {
             showWhatsNewDialog();
-        } else {
+        }
+//        else if(shouldShowIntroduction()){
+//            openIntroductionActivity();
+//        }
+        else {
             openCaptureScreenActivity();
         }
 
         setContentView(R.layout.activity_home_screen);
+    }
+
+    private boolean shouldShowIntroduction() {
+        SharedPreferences sharedPref = getSharedPreferences(PRIVATE_PREF, Context.MODE_PRIVATE);
+
+        boolean wasIntroAlreadyShown = sharedPref.getBoolean(INTRO_HAS_BEEN_SHOWN, false);
+
+        if (Constants.ALWAYS_SHOW_INTRODUCTION || !wasIntroAlreadyShown) {
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putBoolean(INTRO_HAS_BEEN_SHOWN, true);
+            editor.apply();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private void openIntroductionActivity() {
+        startActivityForResult(new Intent(this, IntroductionActivity.class), CAPTURE_SCENE_RESULT);
     }
 
     private void openCaptureScreenActivity() {

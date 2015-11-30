@@ -47,7 +47,19 @@
         <activity
             android:name=".activities.CaptureSceneActivity"
             android:label="@string/title_activity_capture_scene"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".activities.IntroductionActivity"
+            android:label="@string/title_activity_introduction"
+            android:parentActivityName=".activities.HomeScreenActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.salat.viralcam.app.activities.HomeScreenActivity" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

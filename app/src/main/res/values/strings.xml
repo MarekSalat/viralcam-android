@@ -38,8 +38,12 @@
         <hr/>
         <h3>Fixed bugs</h3>
         <ul>
-             <li>Kitkat (and lover) devices had problems with taking pictures on portrait mode. Please let me know if the problem persists.</li>
+            <li>Kitkat (and lover) devices had problems with taking pictures on portrait mode.
+                Please let me know if the problem persists.
+            </li>
         </ul>
-    ]]></string>
+        ]]></string>
+    <string name="title_activity_introduction">Introduction</string>
+    <string name="section_format">Hello World from section: %1$d</string>
 
 </resources>
