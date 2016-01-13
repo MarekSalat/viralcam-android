@@ -11,7 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 public class Constants {
-    public static final String PACKAGE_NAME = "com.salat.viralcam.app";
+    public static final String PACKAGE_NAME = BuildConfig.APPLICATION_ID;
 
     public static enum Flavor {
         Production,
@@ -36,8 +36,8 @@ public class Constants {
      * If false use use whatever api suits more.
      */
     public static final boolean USE_ONLY_LEGACY_CAMERA_API = false;
-    public static final boolean ALWAYS_SHOW_WHATS_NEW = false;
-    public static final boolean ALWAYS_SHOW_INTRODUCTION = true;
+    public static final boolean ALWAYS_SHOW_WHATS_NEW = true;
+    public static final boolean ALWAYS_SHOW_INTRODUCTION = false;
 
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT =  new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSS", Locale.US);
 
