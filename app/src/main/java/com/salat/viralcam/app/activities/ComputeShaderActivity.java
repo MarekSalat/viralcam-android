@@ -3,29 +3,25 @@ package com.salat.viralcam.app.activities;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.opengl.GLES31;
-import android.opengl.GLES31Ext;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.util.AttributeSet;
 import android.util.Log;
-import android.view.View;
 
-import com.salat.viralcam.app.R;
+import com.salat.viralcam.app.util.GLCodes;
 
 import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 
-import javax.microedition.khronos.egl.EGL;
 import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.opengles.GL10;
 
 public class ComputeShaderActivity extends AppCompatActivity {
+
+    private String TAG = "ComputeShaderActivity";
 
     class MyGLSurfaceView extends GLSurfaceView {
         private final MyGLRenderer mRenderer;
@@ -33,12 +29,9 @@ public class ComputeShaderActivity extends AppCompatActivity {
         public MyGLSurfaceView(Context context){
             super(context);
 
-            // Create an OpenGL ES 2.0 context
-            setEGLContextClientVersion(2);
-
+            setEGLContextClientVersion(3);
             mRenderer = new MyGLRenderer();
 
-            // Set the Renderer for drawing on the GLSurfaceView
             setRenderer(mRenderer);
         }
     }
@@ -48,67 +41,125 @@ public class ComputeShaderActivity extends AppCompatActivity {
         public static final int SIZE = 128;
         private int program;
         private int shader;
-        private int[] buffer_out;
-        private int[] buffer_in1;
-        private int[] buffer_in2;
+        private int[] buffers;
+        private String shaderSource = "#version 310 es\n" +
+                "layout(local_size_x = 128) in;\n" +
+                "layout(std430) buffer;\n" +
+                "layout(binding = 0) writeonly buffer Output {\n" +
+                "   int elements[];\n" +
+                "} output_data;\n" +
+                "layout(binding = 1) readonly buffer Input0 {\n" +
+                "   int elements[];\n" +
+                "} input_data0;\n" +
+                "layout(binding = 2) readonly buffer Input1 {\n" +
+                "   int elements[];\n" +
+                "} input_data1;\n" +
+
+                "void main()\n" +
+                "{\n" +
+                "   uint ident = gl_GlobalInvocationID.x;\n" +
+                "   output_data.elements[ident] = 13 + input_data0.elements[ident] + input_data1.elements[ident];\n" +
+                "}";
+
 
         public void onSurfaceCreated(GL10 unused, EGLConfig config) {
+//            // fixme: could be replaced with following code but unfortunately its throws exception: not yet implemented :(
+//            program = GLES31.glCreateShaderProgramv(GLES31.GL_COMPUTE_SHADER, new String[]{ shaderSource });
+//            checkGlError(TAG, "glCreateShaderProgramv");
+
             program = GLES31.glCreateProgram();
+            checkGlError(TAG, "glCreateProgram");
+
             shader = GLES31.glCreateShader(GLES31.GL_COMPUTE_SHADER);
+            checkGlError(TAG, "glCreateShader");
 
-            buffer_out = new int[1];
-            buffer_in1 = new int[1];
-            buffer_in2 = new int[1];
-
-            GLES31.glGenBuffers(SIZE, buffer_out, 0);
-            GLES31.glGenBuffers(SIZE, buffer_in1, 0);
-            GLES31.glGenBuffers(SIZE, buffer_in2, 0);
-
-            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, 1, buffer_in1[1]);
-            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, 2, buffer_in2[2]);
-            GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, SIZE, IntBuffer.allocate(SIZE), 1);
-            GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, SIZE, IntBuffer.allocate(SIZE), 2);
-
-            GLES31.glShaderSource(shader,
-                    "#version 310 es\n" +
-                    "layout(local_size_x = 128) in;\n" +
-
-                    "layout(std430, binding = 0) writeonly buffer Output {\n" +
-                    "   vec4 elements[];\n" +
-                    "} output_data;\n" +
-                    "layout(std430, binding = 1) readonly buffer Input0 {\n" +
-                    "   vec4 elements[];\n" +
-                    "} input_data0;\n" +
-                    "layout(std430, binding = 2) readonly buffer Input1 {\n" +
-                    "   vec4 elements[];\n" +
-                    "} input_data1;\n" +
-
-                    "void main()\n" +
-                    "{\n" +
-                    "   uint ident = gl_GlobalInvocationID.x;\n" +
-                    "   output_data.elements[ident] = input_data0.elements[ident] * input_data1.elements[ident];\n" +
-                    "}"
-            );
+            GLES31.glShaderSource(shader, shaderSource);
+            checkGlError(TAG, "glShaderSource");
 
             GLES31.glCompileShader(shader);
-            GLES31.glAttachShader(program, shader);
-            GLES31.glLinkProgram(program);
-        }
+            int[] compiled = new int[1];
+            GLES31.glGetShaderiv(shader, GLES31.GL_COMPILE_STATUS, compiled, 0);
+            if (compiled[0] == 0) {
+                Log.e(TAG, "Could not compile shader " + ":");
+                Log.e(TAG, GLES31.glGetShaderInfoLog(shader));
+            }
+            checkGlError(TAG, "glCompileShader");
 
+            GLES31.glAttachShader(program, shader);
+            checkGlError(TAG, "glAttachShader");
+
+            GLES31.glLinkProgram(program);
+            checkGlError(TAG, "glLinkProgram");
+        }
 
         public void onDrawFrame(GL10 unused) {
             GLES31.glUseProgram(program);
-            GLES31.glDispatchCompute(SIZE, 1, 1);
+            checkGlError(TAG, "glUseProgram");
 
+            buffers = new int[3];
+            GLES31.glGenBuffers(3, buffers, 0);
+            checkGlError(TAG, "glGenBuffers");
+
+            // in buffer = 1
+            IntBuffer input1buffer = IntBuffer.allocate(SIZE);
+            for (int i = 0; i < SIZE; i++) {
+                input1buffer.put(i, 68);
+            }
+            GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, buffers[1]);
+            GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, SIZE, input1buffer, GLES31.GL_STATIC_DRAW);
+            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, 1, buffers[1]);
+            checkGlError(TAG, "buffer1, glBindBuffer, glBufferData, glBindBufferBase");
+
+            // in buffer = 2
+            IntBuffer input2Buffer = IntBuffer.allocate(SIZE);
+            for (int i = 0; i < SIZE; i++) {
+                input2Buffer.put(i, 37);
+            }
+            GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, buffers[2]);
+            GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, SIZE, input2Buffer, GLES31.GL_STATIC_DRAW);
+            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, 2, buffers[2]);
+            checkGlError(TAG, "buffer2, glBindBuffer, glBufferData, glBindBufferBase");
+
+            // out buffer = 0
+            GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, buffers[0]);
+            GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, SIZE, IntBuffer.allocate(SIZE), GLES31.GL_STATIC_READ);
+            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, 0, buffers[0]);
+            checkGlError(TAG, "buffer0, glBindBuffer, glBufferData, glBindBufferBase");
+
+            // run forest run
+            GLES31.glDispatchCompute(SIZE / 32, 1, 1);
+            checkGlError(TAG, "glDispatchCompute");
+
+            // wait a bit
             GLES31.glMemoryBarrier(GLES31.GL_SHADER_STORAGE_BARRIER_BIT);
 
-            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, 0, buffer_out[0]);
-            Buffer buffer = GLES31.glMapBufferRange(GLES31.GL_SHADER_STORAGE_BUFFER, 0, SIZE, GLES31.GL_READ_ONLY);
+            // read all stuff
+            ByteBuffer buffer = (ByteBuffer) GLES31.glMapBufferRange(GLES31.GL_SHADER_STORAGE_BUFFER, 0, SIZE, GLES31.GL_MAP_READ_BIT );
+            buffer.order(ByteOrder.nativeOrder());
+            IntBuffer resultIntBuffer = buffer.asIntBuffer();
 
-            Log.e("FoFO", "DOne " + buffer.toString());
+            int result = resultIntBuffer.get(0);
+
+            Log.e(TAG, "onDrawFrame " + (buffer.isDirect() ? result : ""));
+
+            GLES31.glUnmapBuffer(GLES31.GL_SHADER_STORAGE_BUFFER);
+            checkGlError(TAG, "glUnmapBuffer");
         }
 
         public void onSurfaceChanged(GL10 unused, int width, int height) {
+        }
+
+        protected void checkGlError(String TAG, String op) {
+            int error;
+            int prevError = 0;
+            boolean hadError = false;
+            while ((error = GLES31.glGetError()) != GLES31.GL_NO_ERROR) {
+                Log.e(TAG, op + String.format(": glError %d, %x. %s", error,error, GLCodes.toString(error)));
+                prevError = error;
+                hadError = true;
+            }
+            if(hadError)
+                throw new RuntimeException(op + ": glError " + prevError + ", " + GLCodes.toString(prevError));
         }
     }
 
