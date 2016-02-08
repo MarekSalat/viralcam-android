@@ -73,12 +73,12 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
         invocationAttempt++;
         IntBuffer input1buffer = IntBuffer.allocate(SIZE);
         for (int i = 0; i < SIZE; i++) {
-            input1buffer.put(i, 11);
+            input1buffer.put(i, 1027);
         }
 
         IntBuffer input2Buffer = IntBuffer.allocate(SIZE);
         for (int i = 0; i < SIZE; i++) {
-            input2Buffer.put(i, 9);
+            input2Buffer.put(i, 3039);
         }
 
         final long start = System.currentTimeMillis();

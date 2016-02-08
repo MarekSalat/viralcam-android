@@ -26,7 +26,7 @@ public class SystemUiHiderHoneycomb extends SystemUiHiderBase {
     private int mHideFlags;
 
     /**
-     * Flags to test against the first parameter in
+     * Flags to test_shader against the first parameter in
      * {@link android.view.View.OnSystemUiVisibilityChangeListener#onSystemUiVisibilityChange(int)}
      * to determine the system UI visibility state.
      */

@@ -1,0 +1,30 @@
+#version 310 es
+// all about types and layouts
+// https://www.opengl.org/wiki/Layout_Qualifier_%28GLSL%29
+
+layout(local_size_x = 32) in;
+layout(std430) buffer; // Sets the default layout for SSBOs. Error code is okay :)
+
+// indicates how many alements are present in vectors
+uniform uint elements;
+
+layout(binding = 0) writeonly buffer Output {
+   int elements[];
+} output_data;
+
+layout(binding = 1) readonly buffer Input0 {
+   int elements[];
+} input_data0;
+
+layout(binding = 2) readonly buffer Input1 {
+   int elements[];
+} input_data1;
+
+void main()
+{
+   uint ident = gl_GlobalInvocationID.x;
+   if(ident >= elements)
+    return;
+
+   output_data.elements[ident] = input_data0.elements[ident] + input_data1.elements[ident];
+}

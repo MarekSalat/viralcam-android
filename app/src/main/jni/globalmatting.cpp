@@ -291,7 +291,7 @@ static void calculateAlphaPatchMatch(Bitmap &image,
                     }
                 }
                 // random walk
-                int max_boundary_width = static_cast<int>(max(foregroundBoundary.size(), backgroundBoundary.size()));
+                int max_boundary_width = max(foregroundBoundary.size(), backgroundBoundary.size());
 
                 float r;
                 for (int k = 0; (r = max_boundary_width * powf(0.5f, k)) > 1; k++)
