@@ -9,22 +9,23 @@ layout(std430) buffer; // Sets the default layout for SSBOs. Error code is okay 
 uniform uint elements;
 
 layout(binding = 0) writeonly buffer Output {
-   int elements[];
+    int elements[];
 } output_data;
 
 layout(binding = 1) readonly buffer Input0 {
-   int elements[];
+    int elements[];
 } input_data0;
 
 layout(binding = 2) readonly buffer Input1 {
-   int elements[];
+    int elements[];
 } input_data1;
 
 void main()
 {
-   uint ident = gl_GlobalInvocationID.x;
-   if(ident >= elements)
-    return;
+    uint index = gl_GlobalInvocationID.x;
 
-   output_data.elements[ident] = input_data0.elements[ident] + input_data1.elements[ident];
+    if(index >= elements)
+        return;
+
+    output_data.elements[index] = input_data0.elements[index] + input_data1.elements[index];
 }

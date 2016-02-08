@@ -1,13 +1,14 @@
-package com.salat.viralcam.app;
+package com.salat.viralcam.app.computeshader;
 
 import android.annotation.TargetApi;
+import android.support.annotation.NonNull;
 import android.content.res.Resources;
 import android.opengl.GLES30;
 import android.opengl.GLES31;
 import android.os.Build;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.util.AssetLoader;
 import com.salat.viralcam.app.util.GLCodes;
 import com.salat.viralcam.app.util.Size;
@@ -19,23 +20,58 @@ import java.nio.IntBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
- * Created by Marek on 08.02.2016.
+ *  http://www.slideshare.net/Khronos_Group/how-to-use-and-teach-opengl-compute-shaders
+ *  http://malideveloper.arm.com/resources/sample-code/introduction-compute-shaders-2/
+ *
+ *  http://developer.android.com/guide/topics/graphics/opengl.html#version-check
+ *  http://developer.android.com/reference/android/opengl/GLES31.html
+ *  developer.android.com/reference/android/opengl/GLES31Ext.html
  */
-public class ComputeShaderTest {
-    private static final String TAG = "ComputeShaderTest";
+public class AddVectorsComputeShader implements ComputeShader, OnShaderArgsValidation {
+    private static class Args implements ComputeShaderArgs {
+        public IntBuffer a;
+        public IntBuffer b;
+        public IntBuffer result;
+        private ComputeShaderResultCallback callback;
 
-    private Resources resources;
-    private static final int WORKGROUP_SIZE_X = 32;
+        public Args(IntBuffer a, IntBuffer b, ComputeShaderResultCallback callback) {
+
+            this.a = a;
+            this.b = b;
+            this.callback = callback;
+        }
+
+        @Override
+        public ComputeShaderResultCallback getResultCallback() {
+            return callback;
+        }
+    }
+
+    private static final String TAG = "AddVectorsComputeShader";
+    private static final int WORKGROUP_SIZE_X = 32; // see shader layout
     public static final int TEST_SHADER_COMP_FILE_NAME =  R.raw.test_shader;
 
+    private final Resources resources;
     private int program;
 
-    public ComputeShaderTest(Resources resources){
+    public AddVectorsComputeShader(Resources resources){
         this.resources = resources;
     }
 
+    public static ComputeShaderArgs createArgs(IntBuffer a, IntBuffer b, ComputeShaderResultCallback callback){
+        return new Args(a, b, callback);
+    }
+
+    public static IntBuffer getResultFromArgs(ComputeShaderArgs args){
+        return ((Args)args).result;
+    }
+
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public void init(GL10 unused){
+    public void initialize(GL10 unused){
+//            // fixme: could be replaced with following code but unfortunately its throws exception: not yet implemented :(
+//            program = GLES31.glCreateShaderProgramv(GLES31.GL_COMPUTE_SHADER, new String[]{ shaderSource });
+//            checkGlError(TAG, "glCreateShaderProgramv");
+
         if(unused == null)
             throw new IllegalArgumentException("GLES context must be initialized");
 
@@ -50,7 +86,7 @@ public class ComputeShaderTest {
         int shader = GLES31.glCreateShader(GLES31.GL_COMPUTE_SHADER);
         checkGlError(TAG, "glCreateShader");
 
-        GLES31.glShaderSource(shader, loadShader());
+        GLES31.glShaderSource(shader, loadShaderFromFile());
         checkGlError(TAG, "glShaderSource");
 
         GLES31.glCompileShader(shader);
@@ -68,18 +104,39 @@ public class ComputeShaderTest {
         GLES31.glLinkProgram(program);
         checkGlError(TAG, "glLinkProgram");
     }
-    
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public IntBuffer compute(IntBuffer a, IntBuffer b){
-        if(a == null)
-            throw new IllegalArgumentException("a");
-        if(b == null)
-            throw new IllegalArgumentException("b");
-        if(a.capacity() != b.capacity())
-            throw new IllegalArgumentException("a and b must have same dimension.");
-        if(a.capacity() == 0)
-            throw new IllegalArgumentException("buffers cannot be empty");
 
+    @Override
+    public void validate(ComputeShaderArgs args) {
+        if (!(args instanceof Args))
+            throw new IllegalArgumentException("args must be instance of this.Args. Use createArgs method.");
+
+        Args myArgs = (Args) args;
+        if(myArgs.a == null)
+            throw new IllegalArgumentException("a");
+        if(myArgs.b == null)
+            throw new IllegalArgumentException("b");
+        if(myArgs.a.capacity() != myArgs.b.capacity())
+            throw new IllegalArgumentException("a and b must have same dimension.");
+        if(myArgs.a.capacity() == 0)
+            throw new IllegalArgumentException("buffers cannot be empty");
+    }
+
+    @Override
+    public void compute(ComputeShaderArgs args) {
+        Args myArgs = (Args) args;
+
+        try {
+            myArgs.result = compute(myArgs.a, myArgs.b);
+        } catch (Exception e) {
+            args.getResultCallback().error(this, args, e);
+            return;
+        }
+
+        args.getResultCallback().success(this, args);
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private IntBuffer compute(IntBuffer a, IntBuffer b){
         final int SIZE = a.capacity();
 
         GLES31.glUseProgram(program);
@@ -122,17 +179,12 @@ public class ComputeShaderTest {
 
         // read all stuff
         GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, 0, buffers[0]);
-        ByteBuffer buffer = (ByteBuffer) GLES31.glMapBufferRange(GLES31.GL_SHADER_STORAGE_BUFFER, 0, SIZE * Size.ofInt(), GLES31.GL_MAP_READ_BIT );
+        ByteBuffer buffer = (ByteBuffer) GLES31.glMapBufferRange(
+                GLES31.GL_SHADER_STORAGE_BUFFER, 0, SIZE * Size.ofInt(), GLES31.GL_MAP_READ_BIT );
         GLES31.glUnmapBuffer(GLES31.GL_SHADER_STORAGE_BUFFER);
         checkGlError(TAG, "glUnmapBuffer");
 
         buffer.order(ByteOrder.nativeOrder());
-
-//            int start = resultIntBuffer.get(0);
-//            int end = resultIntBuffer.get(SIZE-1);
-//
-//            Log.e(TAG, String.format("Result [%d, ... %d, %d, ... %d]", start, resultIntBuffer.get(SIZE/2), resultIntBuffer.get(SIZE/2+1), end));
-
         return buffer.asIntBuffer();
     }
 
@@ -142,15 +194,16 @@ public class ComputeShaderTest {
     }
 
     private String shaderSource;
-    @NonNull
-    private String loadShader() {
+    @NonNull private String loadShaderFromFile() {
         if(shaderSource == null)
             shaderSource = AssetLoader.loadFromRaw(resources, TEST_SHADER_COMP_FILE_NAME);
         return shaderSource;
     }
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     private boolean supportsGLES31(GL10 gl) {
         int[] vers = new int[2];
+
         gl.glGetIntegerv(GLES30.GL_MAJOR_VERSION, vers, 0);
         gl.glGetIntegerv(GLES30.GL_MINOR_VERSION, vers, 1);
 

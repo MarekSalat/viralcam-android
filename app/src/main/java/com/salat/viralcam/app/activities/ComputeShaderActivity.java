@@ -3,7 +3,6 @@ package com.salat.viralcam.app.activities;
 import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -13,15 +12,18 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 
+import com.salat.viralcam.app.computeshader.AddVectorsComputeShader;
 import com.salat.viralcam.app.R;
+import com.salat.viralcam.app.computeshader.ComputeShaderResultCallback;
+import com.salat.viralcam.app.computeshader.ComputeShader;
+import com.salat.viralcam.app.computeshader.ComputeShaderArgs;
 import com.salat.viralcam.app.fragments.ComputeShaderFragment;
 
 import java.nio.IntBuffer;
 
-public class ComputeShaderActivity extends AppCompatActivity implements ComputeShaderFragment.OnFragmentInteractionListener {
-    private static final String FRAGMENT = "FRAGMENT";
-    private String TAG = "ComputeShaderActivity";
-
+public class ComputeShaderActivity extends AppCompatActivity implements ComputeShaderFragment.OnFragmentEvents {
+    private static final String TAG = "ComputeShaderActivity";
+    private static final String FRAGMENT = "COMPUTE_SHADER_FRAGMENT";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,8 +69,14 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
     }
 
     private static int invocationAttempt = 1;
+
     @Override
-    public void onStart(ComputeShaderFragment fragment) {
+    public ComputeShader createComputeShader() {
+        return new AddVectorsComputeShader(getResources());
+    }
+
+    @Override
+    public void onComputeShaderFragmentStart(ComputeShaderFragment fragment) {
         final int SIZE = 1024 * invocationAttempt*invocationAttempt;
         invocationAttempt++;
         IntBuffer input1buffer = IntBuffer.allocate(SIZE);
@@ -82,12 +90,20 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
         }
 
         final long start = System.currentTimeMillis();
-        fragment.compute(input1buffer, input2Buffer, new ComputeShaderFragment.ComputeResult() {
+        fragment.compute(AddVectorsComputeShader.createArgs(input1buffer, input2Buffer, new ComputeShaderResultCallback() {
             @Override
-            public void onResult(IntBuffer c) {
+            public void success(ComputeShader shader, ComputeShaderArgs args) {
                 long end = System.currentTimeMillis();
-                Log.e(TAG, String.format("Result (%d) [%d, ... %d, %d, ... %d] in %d [ms]", SIZE, c.get(0), c.get(SIZE / 2), c.get(SIZE / 2 + 1), c.get(SIZE - 1), end - start));
+                IntBuffer c = AddVectorsComputeShader.getResultFromArgs(args);
+                Log.e(TAG, String.format(
+                        "Result (%d) [%d, ... %d, %d, ... %d] in %d [ms]",
+                        SIZE, c.get(0), c.get(SIZE / 2), c.get(SIZE / 2 + 1), c.get(SIZE - 1), end - start));
             }
-        });
+
+            @Override
+            public void error(ComputeShader shader, ComputeShaderArgs args, Exception exception) {
+                Log.e(TAG, exception.toString());
+            }
+        }));
     }
 }

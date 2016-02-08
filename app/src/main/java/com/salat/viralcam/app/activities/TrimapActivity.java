@@ -429,7 +429,7 @@ public class TrimapActivity extends Activity  {
     }
 
     private void setImageViewBitmapWithMatrix(Matrix drawTrimapViewMatrix, ImageView imageView, Bitmap result) {
-        // init image to initial position
+        // initialize image to initial position
         imageView.setScaleType(ImageView.ScaleType.FIT_START);
         imageView.setImageBitmap(result);
         imageView.invalidate();
