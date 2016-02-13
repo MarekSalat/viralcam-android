@@ -55,11 +55,13 @@ public class ComputeShaderFragment extends Fragment {
             shader.initialize(gl);
         }
 
+        private boolean isRunning = false;
         @Override
         public void onDrawFrame(GL10 unused) {
-            if (compute && args != null)
+            if (compute && args != null && !isRunning){
+                isRunning = true;
                 shader.compute(args);
-
+            }
             doNothing();
         }
 
@@ -89,6 +91,7 @@ public class ComputeShaderFragment extends Fragment {
         private void doNothing() {
             compute = false;
             args = null;
+            isRunning = false;
         }
     }
 

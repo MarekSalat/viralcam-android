@@ -3,7 +3,7 @@
 // https://www.opengl.org/wiki/Layout_Qualifier_%28GLSL%29
 
 layout(local_size_x = 32) in;
-layout(std430) buffer; // Sets the default layout for SSBOs. Error code is okay :)
+layout(std430) buffer;
 
 // indicates how many alements are present in vectors
 uniform uint elements;
