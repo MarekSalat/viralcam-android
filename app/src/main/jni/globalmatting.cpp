@@ -268,9 +268,11 @@ static void calculateAlphaPatchMatch(Bitmap &image,
                             continue;
 
                         Sample &second_sample = samples[y2][x2];
+                        unsigned long sample_foreground_index = sample.foreground_index;
+                        unsigned long sample_background_index = sample.background_index;
 
-                        const Point &foreground_point = foregroundBoundary[second_sample.foreground_index];
-                        const Point &background_point = backgroundBoundary[second_sample.background_index];
+                        const Point &foreground_point = foregroundBoundary[sample_foreground_index];
+                        const Point &background_point = backgroundBoundary[sample_background_index];
 
                         const RGBA &foreground_color = (RGBA&)image(foreground_point.y, foreground_point.x);
                         const RGBA &background_color = (RGBA&)image(background_point.y, background_point.x);
@@ -283,7 +285,7 @@ static void calculateAlphaPatchMatch(Bitmap &image,
 
                         if (cost < sample.cost)
                         {
-                            sample.foreground_index = second_sample.foreground_index;
+                            sample.foreground_index = sample_foreground_index;
                             sample.background_index = second_sample.background_index;
                             sample.cost = cost;
                             sample.alpha = alpha;
@@ -299,14 +301,18 @@ static void calculateAlphaPatchMatch(Bitmap &image,
                     unsigned long foreground_distance = (unsigned long) (r * (rand() / (RAND_MAX + 1.f)));
                     unsigned long background_distance = (unsigned long) (r * (rand() / (RAND_MAX + 1.f)));
 
-                    unsigned long foreground_index = sample.foreground_index + foreground_distance;
-                    unsigned long background_index = sample.background_index + background_distance;
+                    // what about modulo? for now it moving only forward, maybe it would be better to circle around
+                    unsigned long sample_foreground_index = sample.foreground_index + foreground_distance;
+                    unsigned long sample_background_index = sample.background_index + background_distance;
 
-                    if (foreground_index < 0 || foreground_index >= foregroundBoundary.size() || background_index < 0 || background_index >= backgroundBoundary.size())
-                        continue;
+                    sample_foreground_index = sample_foreground_index >= foregroundBoundary.size() ? sample_foreground_index - foregroundBoundary.size() : sample_foreground_index;
+                    sample_background_index = sample_background_index >= backgroundBoundary.size() ? sample_background_index - backgroundBoundary.size() : sample_background_index;
 
-                    const Point &foreground_point = foregroundBoundary[foreground_index];
-                    const Point &background_point = backgroundBoundary[background_index];
+//                    if (sample_foreground_index < 0 || sample_foreground_index >= foregroundBoundary.size() || sample_background_index < 0 || sample_background_index >= backgroundBoundary.size())
+//                        continue;
+
+                    const Point &foreground_point = foregroundBoundary[sample_foreground_index];
+                    const Point &background_point = backgroundBoundary[sample_background_index];
 
                     const RGBA &foreground_color = (RGBA&)image(foreground_point.y, foreground_point.x);
                     const RGBA &background_color = (RGBA&)image(background_point.y, background_point.x);
@@ -319,8 +325,8 @@ static void calculateAlphaPatchMatch(Bitmap &image,
 
                     if (cost < sample.cost)
                     {
-                        sample.foreground_index = foreground_index;
-                        sample.background_index = background_index;
+                        sample.foreground_index = sample_foreground_index;
+                        sample.background_index = sample_background_index;
                         sample.cost = cost;
                         sample.alpha = alpha;
                     }

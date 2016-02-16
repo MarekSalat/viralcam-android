@@ -87,7 +87,7 @@ JNIEXPORT void JNICALL Java_com_salat_viralcam_app_activities_TrimapActivity_cal
         Bitmap trimapBitmap(trimapInfo.width, trimapInfo.height, trimapInfo.stride, (uint32_t *) trimapPixels);
         MaskBitmap outAlphaMaskBitmap(outAlphaInfo.width, outAlphaInfo.height, outAlphaInfo.stride, (uint8_t *) outAlphaPixels);
 
-        expansionOfKnownRegions(imageBitmap, trimapBitmap);
+        //expansionOfKnownRegions(imageBitmap, trimapBitmap);
         globalMatting(imageBitmap, trimapBitmap, outAlphaMaskBitmap);
 
         AndroidBitmap_unlockPixels(env, outAlpha);

@@ -4,7 +4,6 @@ import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -20,7 +19,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
-import com.salat.viralcam.app.computeshader.AddVectorsComputeShader;
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.computeshader.ComputeShaderResultCallback;
 import com.salat.viralcam.app.computeshader.ComputeShader;
@@ -28,11 +26,11 @@ import com.salat.viralcam.app.computeshader.ComputeShaderArgs;
 import com.salat.viralcam.app.fragments.ComputeShaderFragment;
 import com.salat.viralcam.app.matting.AlphaMattingComputeShader;
 
-import java.nio.IntBuffer;
-
 public class ComputeShaderActivity extends AppCompatActivity implements ComputeShaderFragment.OnFragmentEvents {
     private static final String TAG = "ComputeShaderActivity";
     private static final String FRAGMENT = "COMPUTE_SHADER_FRAGMENT";
+    public static final int WIDTH = 800;
+    private static final int HEIGHT = 600;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +65,7 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
                 }
             }
         });
+        fab.performClick();
     }
 
     private static int invocationAttempt = 1;
@@ -107,9 +106,9 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
 //                Log.e(TAG, exception.toString());
 //            }
 //        }));
-        Bitmap image = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888);
-        Bitmap trimap = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888);
-        Bitmap alpha = Bitmap.createBitmap(256, 256, Bitmap.Config.ALPHA_8);
+        Bitmap image = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888);
+        Bitmap trimap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888);
+        Bitmap alpha = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ALPHA_8);
 
         Canvas canvas = new Canvas(image);
         canvas.drawColor(Color.RED);
@@ -119,15 +118,15 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
         paint.setColor(Color.MAGENTA);
         paint.setAlpha(0x77);
-        canvas.drawRect(0, 127, 256, 256, paint);
+        canvas.drawRect(0, HEIGHT/2, WIDTH, HEIGHT, paint);
 
         canvas.setBitmap(trimap);
         canvas.drawColor(Color.BLACK);
         paint.setColor(Color.WHITE);
-        canvas.drawRect(0, 127, 256, 256, paint);
+        canvas.drawRect(0, HEIGHT/2, WIDTH, HEIGHT, paint);
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        canvas.drawRect(0, 128-10, 256, 128+10, paint);
-        canvas.drawCircle(128, 128, 28, paint);
+        canvas.drawRect(0, HEIGHT/2 - 10, WIDTH, HEIGHT/2 + 10, paint);
+        canvas.drawCircle(WIDTH/2, HEIGHT/2, 28, paint);
 
         canvas.setBitmap(alpha);
         canvas.drawColor(Color.BLACK);

@@ -1,0 +1,52 @@
+#version 310 es
+
+layout(local_size_x = 32, local_size_y = 32) in;
+layout(std430) buffer;
+
+uniform ivec2 dimensions;
+uniform int boundary_size;
+
+uniform sampler2D trimap;
+
+layout(binding = 1) writeonly buffer BackgroundBoundary {
+    ivec2 data[];
+} backgroundBoundary;
+
+layout(binding = 2) writeonly buffer ForegroundBoundary {
+    ivec2 data[];
+} foregroundBoundary;
+
+layout(binding = 3, offset = 0) uniform atomic_uint atomic_counter_background;
+layout(binding = 3, offset = 4) uniform atomic_uint atomic_counter_foreground;
+
+float random(uint x,float minVal,float maxVal){
+	x=x*(x*(x*(x*(x+1)+1)+1)+1);
+	float t=float(x)/float(uint(-1));
+	return minVal+t*(maxVal-minVal);
+}
+
+void main(){
+    // rgba
+    uvec4 TRIMAP_FOREGROUND = uvec4(0xff, 0xff, 0xff, 0xFF);
+    uvec4 TRIMAP_BACKGROUND = uvec4(0x00, 0x00, 0x00, 0xFF);
+    uvec4 TRIMAP_UNKNOWN    = uvec4(0x00, 0x00, 0x00, 0x00);
+
+    // random access
+    vec2 tex_coord = vec2(
+        random(gl_LocalInvocationIndex + int(gl_GlobalInvocationID.x), float(0), float(dimensions.x-1)),
+        random(gl_LocalInvocationIndex + int(gl_GlobalInvocationID.y), float(0), float(dimensions.y-1))
+    );
+
+    uvec4 trimap_pixel = uvec4(texture(trimap, tex_coord) * 255.0);
+
+    if(trimap_pixel == TRIMAP_FOREGROUND){
+        uint prev_values = atomicCounterIncrement(atomic_counter_foreground);
+        if(prev_values < boundary_size)
+            foregroundBoundary.data[prev_values] = ivec2(x, y);
+    }
+    else if(trimap_pixel == TRIMAP_BACKGROUND) {
+        uint prev_values = atomicCounterIncrement(atomic_counter_background);
+        if(prev_values < boundary_size)
+            backgroundBoundary.data[prev_values] = ivec2(x, y);
+    }
+}

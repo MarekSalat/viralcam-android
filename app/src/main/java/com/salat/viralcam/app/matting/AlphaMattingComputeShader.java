@@ -3,7 +3,6 @@ package com.salat.viralcam.app.matting;
 import android.annotation.TargetApi;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.opengl.GLES20;
 import android.opengl.GLES31;
 import android.opengl.GLUtils;
 import android.os.Build;
@@ -17,7 +16,6 @@ import com.salat.viralcam.app.computeshader.ComputeShaderResultCallback;
 import com.salat.viralcam.app.computeshader.OnShaderArgsValidation;
 import com.salat.viralcam.app.computeshader.ShaderHelper;
 import com.salat.viralcam.app.util.AssetLoader;
-import com.salat.viralcam.app.util.Constants;
 import com.salat.viralcam.app.util.GLCodes;
 import com.salat.viralcam.app.util.Size;
 
@@ -31,17 +29,29 @@ import javax.microedition.khronos.opengles.GL10;
  * Created by Marek on 08.02.2016.
  */
 public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsValidation, ShaderHelper.OnShaderError {
-    public static final int IMAGE_SAMPLER_INDEX = 0;
-    public static final int TRIMAP_SAMPLER_INDEX = 1;
+    private static final int IMAGE_BINDING = 0;
+    private static final int TRIMAP_BINDING = 1;
+
+    private static final int ALPHA_BUFFER_BINDING = 0;
+    private static final int FOREGROUND_BOUNDARY_BINDING = 1;
+    private static final int BACKGROUND_BUFFER_BINDING = 2;
+    private static final int ATOMIC_BUFFER_BINDING = 3;
+
+    private static final int BOUNDARY_CAPACITY = 1000 * 2; // (x, y)
     private static final int WORKGROUP_SIZE = 32;
-    public static final IntBuffer ATOMIC_COUNTER_1 = IntBuffer.allocate(1);
-    public static final IntBuffer ATOMIC_COUNTER_2 = IntBuffer.allocate(1);
 
     private int program;
-    private Resources resources;
     private int dimensionsLocation;
     private int imageLocation;
     private int trimapLocation;
+    private Resources resources;
+    private final IntBuffer atomicCounters = IntBuffer.allocate(2);
+    private int trimapTexture;
+    private int imageTexture;
+    private int foregroundBoundaryBuffer;
+    private int backgroundBoundaryBuffer;
+    private int atomicCounterBuffer;
+    private int alphaBuffer;
     private int[] textures;
 
     public static class Args implements ComputeShaderArgs {
@@ -81,21 +91,29 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
         textures = new int[2];
         GLES31.glGenTextures(textures.length, textures, 0);
         ShaderHelper.checkGlError(this, "glGenTextures");
+
+        trimapTexture = textures[0];
+        imageTexture = textures[1];
+
+        int[] buffers = new int[4];
+        GLES31.glGenBuffers(buffers.length, buffers, 0);
+        ShaderHelper.checkGlError(this, "glGenBuffers");
+
+        foregroundBoundaryBuffer = buffers[0];
+        backgroundBoundaryBuffer = buffers[1];
+        atomicCounterBuffer = buffers[2];
+        alphaBuffer = buffers[3];
     }
 
     private String shaderSource;
     @NonNull
     private String loadShaderFromFile() {
         if(shaderSource == null)
-            shaderSource = AssetLoader.loadFromRaw(resources, R.raw.alpha_matte);
+            shaderSource = AssetLoader.loadFromRaw(resources, R.raw.alpha_matte_sandbox);
         return shaderSource;
     }
 
     int tempIntBuffer[] = new int[1000 * 1000];
-    IntBuffer alphaBuffer = IntBuffer.allocate(1000 * 1000);
-    // buffer values are points (x, y)
-    IntBuffer foregroundBoundryBuffer = IntBuffer.allocate(10000);
-    IntBuffer backgroundBoundaryBuffer = IntBuffer.allocate(10000);
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void compute(ComputeShaderArgs _args) {
@@ -108,35 +126,41 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
 
         // set dimensions
         GLES31.glUniform2i(dimensionsLocation, width, height);
-        GLES31.glUniform1i(imageLocation, IMAGE_SAMPLER_INDEX);
-        GLES31.glUniform1i(trimapLocation, TRIMAP_SAMPLER_INDEX);
+        GLES31.glUniform1i(imageLocation, IMAGE_BINDING);
+        GLES31.glUniform1i(trimapLocation, TRIMAP_BINDING);
         ShaderHelper.checkGlError(this, "glUniform1i");
 
         // bind textures image and trimap
-        int[] samplers = new int[2];
-        GLES31.glGenSamplers(samplers.length, samplers, 0);
-        bindTexture(args.image, textures[0], IMAGE_SAMPLER_INDEX, samplers[0]);
-        bindTexture(args.trimap, textures[1], TRIMAP_SAMPLER_INDEX, samplers[1]);
+        bindTexture(args.image, imageTexture, IMAGE_BINDING);
+        bindTexture(args.trimap, trimapTexture, TRIMAP_BINDING);
         ShaderHelper.checkGlError(this, "bindTexture");
 
         // create buffer for alpha
         int alphaPixels = width * height;
-        int[] buffers = new int[4];
-        GLES31.glGenBuffers(buffers.length, buffers, 0);
-        ShaderHelper.checkGlError(this, "glGenBuffers");
 
         // bind atomic counters
-        GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, 3, buffers[2]);
-        ATOMIC_COUNTER_1.put(0, 0);
-        ATOMIC_COUNTER_2.put(0, 0);
-        GLES31.glBufferData(GLES31.GL_ATOMIC_COUNTER_BUFFER, Size.ofInt(), ATOMIC_COUNTER_1, GLES31.GL_DYNAMIC_DRAW);
-        GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, 4, buffers[3]);
-        GLES31.glBufferData(GLES31.GL_ATOMIC_COUNTER_BUFFER, Size.ofInt(), ATOMIC_COUNTER_2, GLES31.GL_DYNAMIC_DRAW);
+        atomicCounters.put(0, 0);
+        atomicCounters.put(1, 0);
+        GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, ATOMIC_BUFFER_BINDING, atomicCounterBuffer);
+        GLES31.glBufferData(GLES31.GL_ATOMIC_COUNTER_BUFFER, atomicCounters.capacity() * Size.ofInt(), atomicCounters, GLES31.GL_DYNAMIC_DRAW);
         ShaderHelper.checkGlError(this, "glBindBufferBase atomic");
 
-        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, buffers[0]);
-        GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, alphaPixels * Size.ofInt(), alphaBuffer, GLES31.GL_STATIC_READ);
-        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, 0, buffers[0]);
+        // bind alpha
+        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, alphaBuffer);
+        GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, alphaPixels * Size.ofInt(), null, GLES31.GL_STATIC_READ);
+        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, ALPHA_BUFFER_BINDING, alphaBuffer);
+        ShaderHelper.checkGlError(this, "glBindBuffer, glBufferData, glBindBufferBase, alpha");
+
+        // bind foreground boundary
+        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, foregroundBoundaryBuffer);
+        GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, BOUNDARY_CAPACITY * Size.ofInt(), null, GLES31.GL_STATIC_READ);
+        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, FOREGROUND_BOUNDARY_BINDING, foregroundBoundaryBuffer);
+        ShaderHelper.checkGlError(this, "buffer0, glBindBuffer, glBufferData, glBindBufferBase");
+
+        // bind background boundary
+        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, backgroundBoundaryBuffer);
+        GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, BOUNDARY_CAPACITY * Size.ofInt(), null, GLES31.GL_STATIC_READ);
+        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, BACKGROUND_BUFFER_BINDING, backgroundBoundaryBuffer);
         ShaderHelper.checkGlError(this, "buffer0, glBindBuffer, glBufferData, glBindBufferBase");
 
         // run forest run
@@ -147,38 +171,43 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
 
         // wait a bit
         GLES31.glMemoryBarrier(GLES31.GL_SHADER_STORAGE_BARRIER_BIT);
-        // GL_COMPUTE_SHADER_BIT is the same as GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
-        //GLES31.glMemoryBarrier(GLES31.GL_COMPUTE_SHADER_BIT);
 
         // read all stuff
         // read atomic counters
-        GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, 3, buffers[2]);
-        int counter1 = ((ByteBuffer) GLES31.glMapBufferRange(
-                GLES31.GL_ATOMIC_COUNTER_BUFFER, 0, Size.ofInt(), GLES31.GL_MAP_READ_BIT))
+        GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, ATOMIC_BUFFER_BINDING, atomicCounterBuffer);
+        IntBuffer atomicCountersResult = ((ByteBuffer) GLES31.glMapBufferRange(
+                GLES31.GL_ATOMIC_COUNTER_BUFFER, 0, atomicCounters.capacity() * Size.ofInt(), GLES31.GL_MAP_READ_BIT))
                 .order(ByteOrder.nativeOrder())
-                .asIntBuffer()
-                .get(0);
+                .asIntBuffer();
 
-        GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, 4, buffers[3]);
-        int counter2 = ((ByteBuffer) GLES31.glMapBufferRange(
-                GLES31.GL_ATOMIC_COUNTER_BUFFER, 0, Size.ofInt(), GLES31.GL_MAP_READ_BIT))
-                .order(ByteOrder.nativeOrder())
-                .asIntBuffer()
-                .get(0);
-
-        Log.e("foo", String.format("counters %d, %d", counter1, counter2));
+        Log.e("foo", String.format("counters %d, %d", atomicCountersResult.get(0), atomicCountersResult.get(1)));
 
         // read alpha values
-        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, 0, buffers[0]);
+        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, ALPHA_BUFFER_BINDING, alphaBuffer);
         ByteBuffer alphaFromGpuInBytes = (ByteBuffer) GLES31.glMapBufferRange(
                 GLES31.GL_SHADER_STORAGE_BUFFER, 0, alphaPixels * Size.ofInt(), GLES31.GL_MAP_READ_BIT );
         alphaFromGpuInBytes.order(ByteOrder.nativeOrder());
         IntBuffer alphaFromGpu = alphaFromGpuInBytes.asIntBuffer();
 
-        for (int i = 0; i < alphaPixels; i++) {
-            tempIntBuffer[i] = alphaFromGpu.get(i);
+        final long start = System.currentTimeMillis(); {
+            if(tempIntBuffer.length < alphaPixels)
+                tempIntBuffer = new int[alphaPixels];
+
+            alphaFromGpu.get(tempIntBuffer, 0, alphaPixels);
+            args.alpha.setPixels(tempIntBuffer, 0, width, 0, 0, width, height);
+
+            // FIXME: 16.02.2016 performance improvements
+            // following code should work but I not able to make it work even for RGBA_8888 bitmap.
+            // If I would optimize read and writes, here is the good place where to start.
+            // Copying right to the bitmap takes 1ms while copying to array and then back to bitmap
+            // takes 7ms. Also I would save memory for tempIntBuffer.
+            /*/
+            alphaFromGpuInBytes.rewind();
+            args.alpha.copyPixelsFromBuffer(alphaFromGpuInBytes);
+            /**/
         }
-        args.alpha.setPixels(tempIntBuffer, 0, width, 0, 0, width, height);
+        final long end = System.currentTimeMillis();
+        Log.e("foo", String.format("alpha copying %d [ms]", end - start));
 
         // delete all stuff
         GLES31.glUnmapBuffer(GLES31.GL_SHADER_STORAGE_BUFFER);
@@ -191,12 +220,11 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private static void  bindTexture(Bitmap image, int texture, int index, int sampler) {
+    private static void  bindTexture(Bitmap image, int texture, int index) {
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0 + index);
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, texture);
         GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_MIN_FILTER, GLES31.GL_NEAREST);
         GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_MAG_FILTER, GLES31.GL_NEAREST);
-        //GLES31.glBindSampler(index, sampler);
         GLUtils.texImage2D(GLES31.GL_TEXTURE_2D, 0, image, 0);
     }
 

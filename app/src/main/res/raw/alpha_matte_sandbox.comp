@@ -22,13 +22,14 @@ layout(binding = 2) writeonly buffer ForegroundBoundary {
 
 
 layout(binding = 3, offset = 0) uniform atomic_uint atomic_counter_background;
-layout(binding = 4, offset = 0) uniform atomic_uint atomic_counter_foreground;
+layout(binding = 3, offset = 4) uniform atomic_uint atomic_counter_foreground;
 
 void main(){
     // rgba
     uvec4 TRIMAP_FOREGROUND = uvec4(0xff, 0xff, 0xff, 0xFF);
     uvec4 TRIMAP_BACKGROUND = uvec4(0x00, 0x00, 0x00, 0xFF);
     uvec4 TRIMAP_UNKNOWN    = uvec4(0x00, 0x00, 0x00, 0x00);
+    vec2 TEX_STEP = vec2(1.0 / float(dimensions.x), 1.0 / float(dimensions.y));
 
     int x = int(gl_GlobalInvocationID.x);
     int y = int(gl_GlobalInvocationID.y);
@@ -37,10 +38,10 @@ void main(){
         return;
 
     vec2 tex_coord = vec2(float(x) / float(dimensions.x), float(y) / float(dimensions.y));
-    vec2 tex_coord_top = vec2(float(x) / float(dimensions.x), float(y+1) / float(dimensions.y));
-    vec2 tex_coord_right = vec2(float(x+1) / float(dimensions.x), float(y) / float(dimensions.y));
-    vec2 tex_coord_bottom = vec2(float(x) / float(dimensions.x), float(y-1) / float(dimensions.y));
-    vec2 tex_coord_left = vec2(float(x-1) / float(dimensions.x), float(y) / float(dimensions.y));
+    vec2 tex_coord_top    = vec2(tex_coord.x, tex_coord.y + TEX_STEP.y);
+    vec2 tex_coord_right  = vec2(tex_coord.x + TEX_STEP.x, tex_coord.y);
+    vec2 tex_coord_bottom = vec2(tex_coord.x, tex_coord.y - TEX_STEP.y);
+    vec2 tex_coord_left   = vec2(tex_coord.x - TEX_STEP.x, tex_coord.y);
 
     bool is_neighbour_unknown = (uvec4(texture(trimap, tex_coord_top) * 255.0) == TRIMAP_UNKNOWN ||
                                 uvec4(texture(trimap, tex_coord_right) * 255.0) == TRIMAP_UNKNOWN ||
@@ -50,7 +51,7 @@ void main(){
     uvec4 trimap_pixel = uvec4(texture(trimap, tex_coord) * 255.0);
     if(trimap_pixel == TRIMAP_FOREGROUND){
         if(is_neighbour_unknown){
-            alpha.data[y*dimensions.x + x] = 0xFF000000;
+            alpha.data[y*dimensions.x + x] = 0xFFFFFFFF;
 
             uint prev_values = atomicCounterIncrement(atomic_counter_foreground);
             foregroundBoundary.data[prev_values] = ivec2(x, y);
@@ -58,19 +59,13 @@ void main(){
     }
     else if(trimap_pixel == TRIMAP_BACKGROUND) {
         if(is_neighbour_unknown){
-            alpha.data[y*dimensions.x + x] = 0x77000000;
+            alpha.data[y*dimensions.x + x] = 0x77777777;
 
             uint prev_values = atomicCounterIncrement(atomic_counter_background);
             backgroundBoundary.data[prev_values] = ivec2(x, y);
         }
     }
     else {
-        alpha.data[y*dimensions.x + x] = 0x11000000;
+        alpha.data[y*dimensions.x + x] = 0x11111111;
     }
-
-    // maybe it not necessary to use barrier
-    // barrier();
-
-//    uint pixel_as_int = (pixel_bytes.a << 24) | (pixel_bytes.r << 16) | (pixel_bytes.g << 8) | (pixel_bytes.b);
-//    alpha.data[y*dimensions.x + x] = pixel_as_int - uint(0x22000000);
 }
