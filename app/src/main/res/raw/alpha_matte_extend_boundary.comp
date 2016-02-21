@@ -4,9 +4,12 @@ layout(local_size_x = 32, local_size_y = 32) in;
 layout(std430) buffer;
 
 uniform ivec2 dimensions;
-uniform int boundary_size;
-
+uniform uint boundary_size;
 uniform sampler2D trimap;
+
+//layout(binding = 0) writeonly buffer AlphaBuffer {
+//    int data[];
+//} alpha;
 
 layout(binding = 1) writeonly buffer BackgroundBoundary {
     ivec2 data[];
@@ -19,10 +22,13 @@ layout(binding = 2) writeonly buffer ForegroundBoundary {
 layout(binding = 3, offset = 0) uniform atomic_uint atomic_counter_background;
 layout(binding = 3, offset = 4) uniform atomic_uint atomic_counter_foreground;
 
-float random(uint x,float minVal,float maxVal){
-	x=x*(x*(x*(x*(x+1)+1)+1)+1);
-	float t=float(x)/float(uint(-1));
-	return minVal+t*(maxVal-minVal);
+float rand(vec2 co) {
+    float a = 12.9898;
+    float b = 78.233;
+    float c = 43758.5453;
+    float dt= dot(co.xy ,vec2(a,b));
+    float sn= mod(dt,3.14);
+    return fract(sin(sn) * c);
 }
 
 void main(){
@@ -33,20 +39,25 @@ void main(){
 
     // random access
     vec2 tex_coord = vec2(
-        random(gl_LocalInvocationIndex + int(gl_GlobalInvocationID.x), float(0), float(dimensions.x-1)),
-        random(gl_LocalInvocationIndex + int(gl_GlobalInvocationID.y), float(0), float(dimensions.y-1))
+        rand(vec2(gl_GlobalInvocationID)),
+        rand(vec2(gl_GlobalInvocationID) * 39.0)
     );
 
     uvec4 trimap_pixel = uvec4(texture(trimap, tex_coord) * 255.0);
 
+    ivec2 coord = ivec2(tex_coord.x * float(dimensions.x), tex_coord.y * float(dimensions.y));
     if(trimap_pixel == TRIMAP_FOREGROUND){
         uint prev_values = atomicCounterIncrement(atomic_counter_foreground);
-        if(prev_values < boundary_size)
-            foregroundBoundary.data[prev_values] = ivec2(x, y);
+        if(prev_values < boundary_size){
+            foregroundBoundary.data[prev_values] = coord;
+//            alpha.data[coord.y*dimensions.x + coord.x] = 0xFFFFFFFF;
+        }
     }
     else if(trimap_pixel == TRIMAP_BACKGROUND) {
         uint prev_values = atomicCounterIncrement(atomic_counter_background);
-        if(prev_values < boundary_size)
-            backgroundBoundary.data[prev_values] = ivec2(x, y);
+        if(prev_values < boundary_size){
+            backgroundBoundary.data[prev_values] = coord;
+//            alpha.data[coord.y*dimensions.x + coord.x] = 0xFFFFFFFF;
+        }
     }
 }

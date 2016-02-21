@@ -4,8 +4,12 @@ layout(local_size_x = 32, local_size_y = 32) in;
 layout(std430) buffer;
 
 uniform ivec2 dimensions;
-uniform int boundary_size;
+uniform uint boundary_size;
 uniform sampler2D trimap;
+
+//layout(binding = 0) writeonly buffer AlphaBuffer {
+//    int data[];
+//} alpha;
 
 layout(binding = 1) writeonly buffer BackgroundBoundary {
     ivec2 data[];
@@ -53,4 +57,15 @@ void main(){
         if(prev_values < boundary_size)
             backgroundBoundary.data[prev_values] = ivec2(x, y);
     }
+
+    // debug
+//    if(is_neighbour_unknown && trimap_pixel == TRIMAP_FOREGROUND){
+//        alpha.data[y*dimensions.x + x] = 0xFFFFFFFF;
+//    }
+//    else if(is_neighbour_unknown && trimap_pixel == TRIMAP_BACKGROUND) {
+//        alpha.data[y*dimensions.x + x] = 0x77777777;
+//    }
+//    else {
+//        //alpha.data[y*dimensions.x + x] = 0x08080808;
+//    }
 }

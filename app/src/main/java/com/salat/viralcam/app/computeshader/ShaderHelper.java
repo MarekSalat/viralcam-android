@@ -36,7 +36,11 @@ public class ShaderHelper {
         return vers[0] > 3 || (vers[0] == 3 && vers[1] >= 1);
     }
 
-    public static int compileShader(OnShaderError callack, GL10 gl, String shaderSource){
+    public static int compileShader(OnShaderError callack, GL10 gl, String shaderSource) {
+        return compileShader("", callack, gl, shaderSource);
+    }
+
+    public static int compileShader(String name, OnShaderError callack, GL10 gl, String shaderSource){
         if(gl == null)
             throw new IllegalArgumentException("GLES context must be initialized");
 
@@ -46,28 +50,28 @@ public class ShaderHelper {
         }
 
         int program = GLES31.glCreateProgram();
-        ShaderHelper.checkGlError(callack, "glCreateProgram");
+        ShaderHelper.checkGlError(callack, name + " glCreateProgram");
 
         int shader = GLES31.glCreateShader(GLES31.GL_COMPUTE_SHADER);
-        ShaderHelper.checkGlError(callack, "glCreateShader");
+        ShaderHelper.checkGlError(callack, name + " glCreateShader");
 
         GLES31.glShaderSource(shader, shaderSource);
-        ShaderHelper.checkGlError(callack, "glShaderSource");
+        ShaderHelper.checkGlError(callack, name + " glShaderSource");
 
         GLES31.glCompileShader(shader);
         int[] compiled = new int[1];
         GLES31.glGetShaderiv(shader, GLES31.GL_COMPILE_STATUS, compiled, 0);
         if (compiled[0] == 0) {
-            Log.e(TAG, "Could not compile shader " + ":");
+            Log.e(TAG, name + " Could not compile shader " + ":");
             Log.e(TAG, GLES31.glGetShaderInfoLog(shader));
         }
-        ShaderHelper.checkGlError(callack, "glCompileShader");
+        ShaderHelper.checkGlError(callack, name + " glCompileShader");
 
         GLES31.glAttachShader(program, shader);
-        ShaderHelper.checkGlError(callack, "glAttachShader");
+        ShaderHelper.checkGlError(callack, name + " glAttachShader");
 
         GLES31.glLinkProgram(program);
-        ShaderHelper.checkGlError(callack, "glLinkProgram");
+        ShaderHelper.checkGlError(callack, name + " glLinkProgram");
 
         return program;
     }

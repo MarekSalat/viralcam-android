@@ -4,15 +4,8 @@ layout(local_size_x = 32, local_size_y = 32) in;
 layout(std430) buffer;
 
 uniform ivec2 dimensions;
-uniform int boundary_size;
-uniform int iteration;
-
-uniform sampler2D image;
+uniform uint boundary_size;
 uniform sampler2D trimap;
-
-layout(binding = 0) writeonly buffer AlphaBuffer {
-    int data[];
-} alpha;
 
 layout(binding = 1) readonly buffer BackgroundBoundary {
     ivec2 data[];
@@ -29,23 +22,25 @@ struct Sample
     float cost, alpha;
 };
 
-layout(binding = 3) writeonly buffer Samples {
+layout(binding = 4) writeonly buffer Samples {
     Sample data[];
-} sampler;
+} samples;
 
-float random(uint x,float minVal,float maxVal){
-	x=x*(x*(x*(x*(x+1)+1)+1)+1);
-	float t=float(x)/float(uint(-1));
-	return minVal+t*(maxVal-minVal);
+float rand(vec2 co) {
+    float a = 12.9898;
+    float b = 78.233;
+    float c = 43758.5453;
+    float dt= dot(co.xy ,vec2(a,b));
+    float sn= mod(dt,3.14);
+    return fract(sin(sn) * c);
 }
 
-float nearestDistance(ivec2 data[], ivec2 point) {
-    // INT_MAX    = +2147483647
-    int minDistSqr = 2147483647;
-    for (int i = 0; i < boundary_size; ++i)
-    {
-        ivec2 delta = boundary[i] - point;
-        ivec2 dist_to_boundary = pow(delta.x, 2) + pow(delta.y, 2);
+float nearestDistance(bool use_foreground, ivec2 point) {
+    // FLT_MAX      = 3.402823e+38
+    float minDistSqr = 3.402823e+38;
+    for (uint i = uint(0); i < boundary_size; ++i) {
+        vec2 delta = vec2((use_foreground ? foregroundBoundary.data[i] : foregroundBoundary.data[i]) - point);
+        float dist_to_boundary = pow(delta.x, 2.0) + pow(delta.y, 2.0);
         minDistSqr = min(minDistSqr, dist_to_boundary);
     }
 
@@ -63,20 +58,20 @@ void main(){
         return;
 
     vec2 tex_coord = vec2(float(x) / float(dimensions.x), float(y) / float(dimensions.y));
-    vec4 trimap_pixel = uvec4(texture(trimap, tex_coord) * 255.0);
+    uvec4 trimap_pixel = uvec4(texture(trimap, tex_coord) * 255.0);
 
     if(trimap_pixel != TRIMAP_UNKNOWN)
         return;
 
     // FLT_MAX      = 3.402823e+38
     Sample _sample = Sample(
-        int(random(gl_LocalInvocationIndex, 0, boundary_size-1)),
-        int(random(gl_LocalInvocationIndex, 0, boundary_size-1)),
+        int(rand(vec2(gl_GlobalInvocationID) * 13.0) * float(boundary_size)-1.0),
+        int(rand(vec2(gl_GlobalInvocationID) * 17.0) * float(boundary_size)-1.0),
         0.0, 0.0,
-        3.402823e+38, 0);
+        3.402823e+38, 0.0);
 
-    _sample.distance2background = nearestDistance(backgroundBoundary, x, y);
-    _sample.distance2foreground = nearestDistance(foregroundBoundary, x, y);
+    _sample.distance2background = nearestDistance(true, ivec2(x, y));
+    _sample.distance2foreground = nearestDistance(false, ivec2(x, y));
 
     samples.data[y*dimensions.x + x] = _sample;
 }
