@@ -20,6 +20,7 @@ import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -27,6 +28,7 @@ import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 
 import com.salat.viralcam.app.R;
@@ -92,11 +94,11 @@ public class CaptureSceneActivity extends AppCompatActivity {
 
             cameraFragment.setRetainInstance(true);
             getFragmentManager().beginTransaction()
-                    .replace(R.id.container, cameraFragment)
+                    .replace(R.id.container, cameraFragment, CAMERA_FRAGMENT)
                     .commit();
         }
 
-        final com.github.clans.fab.FloatingActionButton takePictureButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.take_picture_button);
+        final ImageButton takePictureButton = (ImageButton) findViewById(R.id.capture_scene_button);
         if(!isImageSelected())
             takePictureButton.setVisibility(View.INVISIBLE);
 
@@ -121,7 +123,7 @@ public class CaptureSceneActivity extends AppCompatActivity {
             }
         });
 
-        final com.github.clans.fab.FloatingActionButton selectBackgroundButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.select_background_button);
+        final ImageButton selectBackgroundButton = (ImageButton) findViewById(R.id.select_image_button);
         selectBackgroundButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -167,7 +169,11 @@ public class CaptureSceneActivity extends AppCompatActivity {
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
                 float alpha = imageView.getAlpha();
-                alpha += distanceX / 100;
+                float distance = Math.abs(distanceX) > Math.abs(distanceY) ? distanceX : distanceY;
+                double deltaInPx = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+                double deltaInDps = deltaInPx / getResources().getDisplayMetrics().density;
+
+                alpha += (distance < 0 ? -1 : 1) * deltaInDps / 1000;
                 imageView.setAlpha(Math.max(0.2f, Math.min(0.95f, alpha)));
                 return true;
             }

@@ -1,0 +1,48 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0099cc"
+    tools:context=".HomeScreenActivity">
+
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000" />
+
+    <com.salat.viralcam.app.views.ImageWithMask
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/imageView"
+        android:alpha=".65"
+        android:layout_gravity="left|top" >
+
+    </com.salat.viralcam.app.views.ImageWithMask>
+
+    <ImageButton
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_marginBottom="24dp"
+        android:scaleType="centerCrop"
+        android:id="@+id/capture_scene_button"
+        android:src="@drawable/ic_camera_white_48dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/capture_scene_button_description"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"/>
+
+    <ImageButton
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:scaleType="centerCrop"
+        android:layout_marginLeft="16dp"
+        android:layout_marginBottom="48dp"
+        android:id="@+id/select_image_button"
+        android:src="@drawable/ic_insert_photo_white_48dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/select_button_button_description"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"/>
+
+</RelativeLayout>

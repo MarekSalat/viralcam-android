@@ -16,10 +16,10 @@
         android:scaleType="fitStart"/>
 
     <com.salat.viralcam.app.views.DrawTrimapView
+        android:visibility="invisible"
         android:id="@+id/drawTrimapView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-    />
+        android:layout_height="match_parent" />
 
     <com.github.clans.fab.FloatingActionButton
         android:id="@+id/button_share"
@@ -96,4 +96,103 @@
             fab:fab_label="@string/smudge"
             fab:fab_size="mini"/>
     </com.github.clans.fab.FloatingActionMenu>
+
+    <ImageButton
+        android:id="@+id/done_button"
+        android:src="@drawable/ic_check_circle_white_48dp"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_marginRight="24dp"
+        android:scaleType="centerCrop"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/capture_scene_button_description"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true" />
+
+    <!--android:background="@android:color/transparent"-->
+    <ImageButton
+        android:id="@+id/swap_images_button"
+        android:src="@drawable/ic_swap_horiz_white_48dp"
+        android:visibility="invisible"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_marginRight="24dp"
+        android:scaleType="centerCrop"
+        android:background="?attr/selectableItemBackground"
+        android:contentDescription="@string/capture_scene_button_description"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true" />
+
+    <ImageButton
+        android:visibility="invisible"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_marginRight="24dp"
+        android:scaleType="centerCrop"
+        android:id="@+id/share_button"
+        android:src="@drawable/ic_action_share"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/select_button_button_description"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="16dp"
+        android:gravity="center" >
+
+        <ImageButton
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:scaleType="centerCrop"
+            android:id="@+id/edit_trimap_button"
+            android:src="@drawable/ic_edit"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/select_button_button_description" />
+
+        <ImageButton
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:scaleType="centerCrop"
+            android:cropToPadding="true"
+            android:id="@+id/smudge_brush_button"
+            android:src="@drawable/ic_image_layer_star"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/select_button_button_description" />
+
+        <ImageButton
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:scaleType="centerCrop"
+            android:padding="1dp"
+            android:cropToPadding="true"
+            android:id="@+id/clear_brush_button"
+            android:src="@drawable/ic_filter_none_white_48dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/select_button_button_description" />
+
+        <ImageButton
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:scaleType="centerCrop"
+            android:id="@+id/foreground_brush_button"
+            android:src="@drawable/ic_flip_to_front_white_48dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/select_button_button_description" />
+
+        <ImageButton
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:scaleType="centerCrop"
+            android:id="@+id/background_brush_button"
+            android:src="@drawable/ic_flip_to_back_white_48dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/select_button_button_description" />
+    </LinearLayout>
+
+
+
 </RelativeLayout>
