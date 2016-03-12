@@ -7,18 +7,13 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -27,7 +22,6 @@ import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.fragments.CameraLollipopFragment;
@@ -50,6 +44,8 @@ public class CaptureSceneActivity extends AppCompatActivity {
     private AlertDialog dialog;
     private GestureDetectorCompat mDetector;
 
+    private static final String KEY_USE_REAR_CAMERA = "CaptureSceneActivity.KEY_USE_REAR_CAMERA";
+    private boolean mUseRear = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +58,9 @@ public class CaptureSceneActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_capture_scene);
+
+        if(savedInstanceState != null)
+            mUseRear = savedInstanceState.getBoolean(KEY_USE_REAR_CAMERA, true);
 
         if(savedInstanceState != null && savedInstanceState.getString(KEY_BACKGROUND_URI) != null && !savedInstanceState.getString(KEY_BACKGROUND_URI).isEmpty()){
             imageUri =  Uri.parse(savedInstanceState.getString(KEY_BACKGROUND_URI));
@@ -81,30 +80,19 @@ public class CaptureSceneActivity extends AppCompatActivity {
             }
         }
 
-        FragmentManager fm = getFragmentManager();
-        Fragment cameraFragment = fm.findFragmentByTag(CAMERA_FRAGMENT);
-
-        if (cameraFragment == null) {
-            if(Constants.USE_ONLY_LEGACY_CAMERA_API || Build.VERSION.SDK_INT <  Build.VERSION_CODES.LOLLIPOP)
-                cameraFragment = CameraOldVersionsFragment.newInstance();
-            else
-                cameraFragment = CameraLollipopFragment.newInstance();
-
-            cameraFragment.setRetainInstance(true);
-            getFragmentManager().beginTransaction()
-                    .replace(R.id.container, cameraFragment)
-                    .commit();
-        }
+        createAndReplaceCameraFragment(mUseRear);
 
         final com.github.clans.fab.FloatingActionButton takePictureButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.take_picture_button);
         if(!isImageSelected())
             takePictureButton.setVisibility(View.INVISIBLE);
 
-        final Fragment finalCameraFragment = cameraFragment;
         takePictureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((CameraFragment) finalCameraFragment).takePicture(new CameraLollipopFragment.OnCaptureCompleted() {
+                FragmentManager fm = getFragmentManager();
+                Fragment cameraFragment = fm.findFragmentByTag(CAMERA_FRAGMENT);
+
+                ((CameraFragment) cameraFragment).takePicture(new CameraLollipopFragment.OnCaptureCompleted() {
 
                     @Override
                     public void onCaptureComplete(String foregroundImagePath, Uri uri) {
@@ -138,13 +126,21 @@ public class CaptureSceneActivity extends AppCompatActivity {
                 takePictureButton.setVisibility(View.VISIBLE);
                 int resourceId = R.raw.panda;
 
-                switch (which){
-                    case 0:  resourceId = R.raw.panda; break;
-                    case 1:  resourceId = R.raw.pizza_tower; break;
-                    case 2:  resourceId = R.raw.game_of_thrones; break;
-                    case 3:  resourceId = R.raw.star_warse; break;
+                switch (which) {
+                    case 0:
+                        resourceId = R.raw.panda;
+                        break;
+                    case 1:
+                        resourceId = R.raw.pizza_tower;
+                        break;
+                    case 2:
+                        resourceId = R.raw.game_of_thrones;
+                        break;
+                    case 3:
+                        resourceId = R.raw.star_warse;
+                        break;
 
-                    default:{
+                    default: {
 
                         Intent intent = new Intent();
                         // Show only images, no videos or anything else
@@ -173,7 +169,51 @@ public class CaptureSceneActivity extends AppCompatActivity {
             }
         });
 
+
+        final com.github.clans.fab.FloatingActionButton swapCamera = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.swap_camera);
+        swapCamera.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                mUseRear = !mUseRear;
+
+                if(mUseRear){
+                    swapCamera.setImageResource(R.drawable.ic_camera_rear_white_48dp);
+                    imageView.setScaleX(1);
+                }
+                else{
+                    swapCamera.setImageResource(R.drawable.ic_camera_front_white_48dp);
+                    imageView.setScaleX(-1);
+                }
+
+                createAndReplaceCameraFragment(mUseRear);
+            }
+        });
+
         dialog = builder.create();
+    }
+
+    @NonNull
+    private void createAndReplaceCameraFragment(boolean useRearCamera) {
+        FragmentManager fm = getFragmentManager();
+        Fragment cameraFragment = fm.findFragmentByTag(CAMERA_FRAGMENT);
+
+        if(cameraFragment != null){
+            fm.beginTransaction()
+                    .remove(cameraFragment)
+                    .commit();
+        }
+
+        if(Constants.USE_ONLY_LEGACY_CAMERA_API || Build.VERSION.SDK_INT <  Build.VERSION_CODES.LOLLIPOP)
+            cameraFragment = CameraOldVersionsFragment.newInstance();
+        else
+            cameraFragment = CameraLollipopFragment.newInstance(useRearCamera);
+
+        cameraFragment.setRetainInstance(true);
+        fm.beginTransaction()
+                .replace(R.id.container, cameraFragment, CAMERA_FRAGMENT)
+                .commit();
+
     }
 
     @Override
@@ -210,6 +250,7 @@ public class CaptureSceneActivity extends AppCompatActivity {
     {
         if(isImageSelected())
             outState.putString(KEY_BACKGROUND_URI, imageUri.toString());
+        outState.putBoolean(KEY_USE_REAR_CAMERA, mUseRear);
         super.onSaveInstanceState(outState);
     }
 
@@ -284,17 +325,4 @@ public class CaptureSceneActivity extends AppCompatActivity {
     private boolean isImageSelected(){
         return imageUri != null;
     }
-
-    private boolean hasImage(@NonNull ImageView view) {
-        Drawable drawable = view.getDrawable();
-        boolean hasImage = (drawable != null);
-
-        if (hasImage && (drawable instanceof BitmapDrawable)) {
-            hasImage = ((BitmapDrawable)drawable).getBitmap() != null;
-        }
-
-        return hasImage;
-    }
-
-
 }
