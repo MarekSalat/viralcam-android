@@ -31,7 +31,7 @@
         android:layout_marginBottom="10dp"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
-        android:src="@android:drawable/ic_menu_share" />
+        android:src="@drawable/ic_share_white_48dp" />
 
     <com.github.clans.fab.FloatingActionButton
         android:id="@+id/button_magic"
@@ -43,7 +43,7 @@
         android:layout_marginBottom="10dp"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
-        android:src="@drawable/ic_star" />
+        android:src="@drawable/ic_check_white_48dp" />
 
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/button_editing_menu"
@@ -55,7 +55,7 @@
         android:layout_marginBottom="10dp"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
-        fab:menu_icon="@drawable/ic_edit"
+        fab:menu_icon="@drawable/ic_mode_edit_white_48dp"
         fab:menu_colorNormal="#43A047"
         fab:menu_colorPressed="#2E7D32"
         fab:menu_colorRipple="#1B5E20"
@@ -68,7 +68,7 @@
             android:id="@+id/button_background"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_edit"
+            android:src="@drawable/ic_gesture_white_48dp"
             fab:fab_label="@string/background"
             fab:fab_size="mini" />
 
@@ -76,7 +76,7 @@
             android:id="@+id/button_foreground"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_edit"
+            android:src="@drawable/ic_gesture_white_48dp"
             fab:fab_label="@string/foreground"
             fab:fab_size="mini"/>
 
@@ -84,7 +84,7 @@
             android:id="@+id/button_clear"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_edit"
+            android:src="@drawable/ic_gesture_white_48dp"
             fab:fab_label="@string/clear"
             fab:fab_size="mini"/>
 
@@ -92,7 +92,7 @@
             android:id="@+id/button_clever"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_star"
+            android:src="@drawable/ic_gesture_white_48dp"
             fab:fab_label="@string/smudge"
             fab:fab_size="mini"/>
     </com.github.clans.fab.FloatingActionMenu>

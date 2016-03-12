@@ -28,7 +28,7 @@
         android:layout_marginBottom="10dp"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
-        android:src="@drawable/ic_star" />
+        android:src="@drawable/ic_collections_white_48dp" />
 
     <com.github.clans.fab.FloatingActionButton
         android:id="@+id/take_picture_button"
@@ -40,5 +40,5 @@
         android:layout_marginBottom="10dp"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
-        android:src="@drawable/ic_edit" />
+        android:src="@drawable/ic_camera_white_48dp" />
 </RelativeLayout>
