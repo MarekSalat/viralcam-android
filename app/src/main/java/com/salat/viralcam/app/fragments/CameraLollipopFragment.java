@@ -1028,10 +1028,7 @@ public class CameraLollipopFragment extends Fragment implements View.OnClickList
 
             // Find rotation of device in degrees (reverse device orientation for front-facing
             // cameras).
-            int rotation = (mCharacteristics.get(CameraCharacteristics.LENS_FACING) ==
-                    CameraCharacteristics.LENS_FACING_FRONT) ?
-                    (360 + ORIENTATIONS.get(deviceRotation)) % 360 :
-                    (360 - ORIENTATIONS.get(deviceRotation)) % 360;
+            int rotation = (360 - ORIENTATIONS.get(deviceRotation)) % 360;
 
             Matrix matrix = new Matrix();
             RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
