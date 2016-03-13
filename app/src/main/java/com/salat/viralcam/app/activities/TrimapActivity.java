@@ -54,6 +54,8 @@ public class TrimapActivity extends Activity  {
     private Bitmap foreground;
     private Bitmap background;
     private ScaleGestureDetector scaleGestureDetector;
+    private Uri backgroundUri;
+    private Uri foregroundUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,8 +78,8 @@ public class TrimapActivity extends Activity  {
         Uri defaultForegroundUri = Constants.getUriFromResource(getResources(), R.raw.pizza_tower);
         Uri defaultBackgroundUri = Constants.getUriFromResource(getResources(), R.raw.panda);
 
-        Uri foregroundUri = foregroundUriString == null || foregroundUriString.isEmpty() ? defaultForegroundUri : Uri.parse(foregroundUriString);
-        Uri backgroundUri = backgroundUriString == null || backgroundUriString.isEmpty() ? defaultBackgroundUri : Uri.parse(backgroundUriString);
+        foregroundUri = foregroundUriString == null || foregroundUriString.isEmpty() ? defaultForegroundUri : Uri.parse(foregroundUriString);
+        backgroundUri = backgroundUriString == null || backgroundUriString.isEmpty() ? defaultBackgroundUri : Uri.parse(backgroundUriString);
 
         foreground = getBitmap(foregroundUri, defaultForegroundUri);
         background = getBitmap(backgroundUri, defaultBackgroundUri);
@@ -351,6 +353,17 @@ public class TrimapActivity extends Activity  {
             @Override
             public void onScaleEnd(ScaleGestureDetector detector) {
                 drawTrimapView.setState(savedState);
+            }
+        });
+
+        final FloatingActionButton buttonSwapImages = (FloatingActionButton) findViewById(R.id.button_swap_images);
+        buttonSwapImages.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(TrimapActivity.this, TrimapActivity.class);
+                intent.putExtra(INTENT_EXTRA_FOREGROUND_IMAGE_URI, backgroundUri.toString());
+                intent.putExtra(INTENT_EXTRA_BACKGROUND_IMAGE_URI, foregroundUri.toString());
+                startActivity(intent);
             }
         });
     }

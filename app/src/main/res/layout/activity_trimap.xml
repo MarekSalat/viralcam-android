@@ -96,4 +96,18 @@
             fab:fab_label="@string/smudge"
             fab:fab_size="mini"/>
     </com.github.clans.fab.FloatingActionMenu>
+
+    <com.github.clans.fab.FloatingActionButton
+        fab:fab_size="mini"
+        android:id="@+id/button_swap_images"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@id/button_magic"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:src="@drawable/ic_swap_calls_white_48dp" />
+
 </RelativeLayout>
