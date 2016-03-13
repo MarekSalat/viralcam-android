@@ -37,22 +37,22 @@
         <activity
             android:name=".activities.TestSandboxActivity"
             android:label="@string/title_activity_test_sanbox"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme.FullScreen">
 
-            <!-- <intent-filter> -->
-            <!-- &lt;!&ndash;<action android:name="android.intent.action.MAIN" />&ndash;&gt; -->
+             <intent-filter>
+             <action android:name="android.intent.action.MAIN" />
             <!-- &lt;!&ndash;<category android:name="android.intent.category.LAUNCHER" />&ndash;&gt; -->
-            <!-- </intent-filter> -->
+             </intent-filter>
         </activity>
         <activity
             android:name=".activities.CaptureSceneActivity"
             android:label="@string/title_activity_capture_scene"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme.FullScreen" />
         <activity
             android:name=".activities.IntroductionActivity"
             android:label="@string/title_activity_introduction"
             android:parentActivityName=".activities.HomeScreenActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme.FullScreen">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.salat.viralcam.app.activities.HomeScreenActivity" />

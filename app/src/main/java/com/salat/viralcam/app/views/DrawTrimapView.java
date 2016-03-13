@@ -121,7 +121,7 @@ public class DrawTrimapView extends View {
 
     @Override
     public boolean hasOverlappingRendering() {
-        return false;
+        return true;
     }
 
     @Override
