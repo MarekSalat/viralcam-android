@@ -38,11 +38,10 @@
             android:name=".activities.TestSandboxActivity"
             android:label="@string/title_activity_test_sanbox"
             android:theme="@style/AppTheme.FullScreen">
-
-             <intent-filter>
-             <action android:name="android.intent.action.MAIN" />
-            <!-- &lt;!&ndash;<category android:name="android.intent.category.LAUNCHER" />&ndash;&gt; -->
-             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <!-- &lt;!&ndash;<category android:name="android.intent.category.LAUNCHER" />&ndash;&gt; -->
+            </intent-filter>
         </activity>
         <activity
             android:name=".activities.CaptureSceneActivity"
@@ -56,6 +55,15 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.salat.viralcam.app.activities.HomeScreenActivity" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".activities.RippleTestActivity"
+            android:label="@string/title_activity_ripple_test"
+            android:theme="@style/AppTheme.FullScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>

@@ -47,5 +47,6 @@
     <string name="section_format">Hello World from section: %1$d</string>
     <string name="capture_scene_button_description">capture scene</string>
     <string name="select_button_button_description">select image</string>
+    <string name="title_activity_ripple_test">RippleTest</string>
 
 </resources>
