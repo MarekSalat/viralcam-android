@@ -2,7 +2,6 @@ package com.salat.viralcam.app.views;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -30,6 +29,7 @@ public class ImageWithMask extends View {
     private Paint mMaskPaint;
     private Paint mImagePaint;
     private Rect mBitmapRect;
+    private int scaleX = 1;
 
 
     public ImageWithMask(Context c) {
@@ -118,8 +118,13 @@ public class ImageWithMask extends View {
             return;
 
         canvas.save();
+        canvas.scale(scaleX, 1, mBitmapRect.width() / 2, 0);
         canvas.drawBitmap(mImage, null, mBitmapRect, mImagePaint);
         canvas.drawBitmap(mMask, null, mBitmapRect, mMaskPaint);
         canvas.restore();
+    }
+
+    public void setScale(int scaleX) {
+        this.scaleX = scaleX;
     }
 }

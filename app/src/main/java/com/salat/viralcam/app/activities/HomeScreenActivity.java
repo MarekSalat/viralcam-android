@@ -1,51 +1,17 @@
 package com.salat.viralcam.app.activities;
 
-import com.github.clans.fab.FloatingActionButton;
-import com.salat.viralcam.app.BuildConfig;
-import com.salat.viralcam.app.R;
-import com.salat.viralcam.app.fragments.CameraLollipopFragment;
-import com.salat.viralcam.app.util.BitmapLoader;
-import com.salat.viralcam.app.util.Constants;
-import com.salat.viralcam.app.views.ImageWithMask;
-
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.GestureDetector;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewTreeObserver;
-import android.view.Window;
-import android.view.WindowManager;
 import android.webkit.WebView;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
 
-import java.io.IOException;
-
-import fragments.CameraFragment;
-import fragments.CameraOldVersionsFragment;
+import com.salat.viralcam.app.BuildConfig;
+import com.salat.viralcam.app.R;
+import com.salat.viralcam.app.util.Constants;
 
 public class HomeScreenActivity extends AppCompatActivity {
     private static final int CAPTURE_SCENE_RESULT = 42;

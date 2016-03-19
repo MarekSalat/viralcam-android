@@ -1,68 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".activities.TestSandboxActivity"
-    tools:showIn="@layout/activity_test_sandbox"
-    android:background="#868585" >
+    tools:showIn="@layout/activity_test_sandbox"  >
 
-    <!--<com.salat.viralcam.app.views.TestView-->
-        <!--android:id="@+id/drawing"-->
-        <!--android:layout_width="325dp"-->
-        <!--android:layout_height="match_parent"-->
-        <!--android:background="@android:color/transparent" >-->
-    <!--</com.salat.viralcam.app.views.TestView>-->
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@drawable/ic_queue_white_48dp" />
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@android:color/transparent">
-        <LinearLayout
-            android:layout_width="96dp"
-            android:layout_height="96dp"
-            android:layout_centerVertical="true"
-            android:layout_centerHorizontal="true"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:background="?attr/selectableItemBackgroundBorderless" >
-            <ImageView
-                android:id="@+id/imageView2"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/ic_camera_white_24dp"
-                android:tint="#FDFF37" />
-        </LinearLayout>
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/image_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="false"/>
     </RelativeLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
-        <LinearLayout
-            android:layout_width="96dp"
-            android:layout_height="96dp"
-            android:layout_centerHorizontal="true"
-            android:layout_alignParentBottom="true"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:background="?attr/selectableItemBackgroundBorderless" >
-            <ImageView
-                android:id="@+id/imageView3"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/ic_camera_white_24dp"
-                android:tint="#ff6c86" />
-        </LinearLayout>
-    </RelativeLayout>
+        android:layout_height="match_parent">
 
-</RelativeLayout>
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_camera_white_48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#ff6c86" />
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_camera_white_48dp"
+            android:layout_centerInParent="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#ff6c86" />
+
+    </RelativeLayout>
+</FrameLayout>

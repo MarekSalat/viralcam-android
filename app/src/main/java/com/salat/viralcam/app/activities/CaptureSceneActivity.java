@@ -7,6 +7,8 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -21,7 +23,10 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.fragments.CameraLollipopFragment;
@@ -34,6 +39,7 @@ import java.io.IOException;
 import fragments.CameraFragment;
 import fragments.CameraOldVersionsFragment;
 
+@SuppressWarnings("ConstantConditions")
 public class CaptureSceneActivity extends AppCompatActivity {
 
     private static final String TAG = "CaptureSceneActivity";
@@ -46,6 +52,7 @@ public class CaptureSceneActivity extends AppCompatActivity {
 
     private static final String KEY_USE_REAR_CAMERA = "CaptureSceneActivity.KEY_USE_REAR_CAMERA";
     private boolean mUseRear = true;
+    private Bitmap imageViewBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,7 +89,9 @@ public class CaptureSceneActivity extends AppCompatActivity {
 
         createAndReplaceCameraFragment(mUseRear);
 
-        final com.github.clans.fab.FloatingActionButton takePictureButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.take_picture_button);
+        final ImageWithMask imageView = (ImageWithMask) findViewById(R.id.image_view);
+
+        final View takePictureButton = findViewById(R.id.take_picture_button);
         if(!isImageSelected())
             takePictureButton.setVisibility(View.INVISIBLE);
 
@@ -92,10 +101,20 @@ public class CaptureSceneActivity extends AppCompatActivity {
                 FragmentManager fm = getFragmentManager();
                 Fragment cameraFragment = fm.findFragmentByTag(CAMERA_FRAGMENT);
 
+                Animation rotation = AnimationUtils.loadAnimation(CaptureSceneActivity.this, R.anim.clockwise_rotation);
+                rotation.setRepeatCount(Animation.INFINITE);
+                takePictureButton.startAnimation(rotation);
+
                 ((CameraFragment) cameraFragment).takePicture(new CameraLollipopFragment.OnCaptureCompleted() {
 
                     @Override
                     public void onCaptureComplete(String foregroundImagePath, Uri uri) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                takePictureButton.clearAnimation();
+                            }
+                        });
                         if (foregroundImagePath == null || uri == null) {
                             return;
                         }
@@ -109,7 +128,7 @@ public class CaptureSceneActivity extends AppCompatActivity {
             }
         });
 
-        final com.github.clans.fab.FloatingActionButton selectBackgroundButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.select_background_button);
+        final View selectBackgroundButton = findViewById(R.id.select_image_button);
         selectBackgroundButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -126,21 +145,13 @@ public class CaptureSceneActivity extends AppCompatActivity {
                 takePictureButton.setVisibility(View.VISIBLE);
                 int resourceId = R.raw.panda;
 
-                switch (which) {
-                    case 0:
-                        resourceId = R.raw.panda;
-                        break;
-                    case 1:
-                        resourceId = R.raw.pizza_tower;
-                        break;
-                    case 2:
-                        resourceId = R.raw.game_of_thrones;
-                        break;
-                    case 3:
-                        resourceId = R.raw.star_warse;
-                        break;
+                switch (which){
+                    case 0:  resourceId = R.raw.panda; break;
+                    case 1:  resourceId = R.raw.pizza_tower; break;
+                    case 2:  resourceId = R.raw.game_of_thrones; break;
+                    case 3:  resourceId = R.raw.star_warse; break;
 
-                    default: {
+                    default:{
 
                         Intent intent = new Intent();
                         // Show only images, no videos or anything else
@@ -158,7 +169,6 @@ public class CaptureSceneActivity extends AppCompatActivity {
             }
         });
 
-        final ImageWithMask imageView = (ImageWithMask) findViewById(R.id.imageView);
         mDetector = new GestureDetectorCompat(this, new GestureDetector.SimpleOnGestureListener(){
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
@@ -170,7 +180,12 @@ public class CaptureSceneActivity extends AppCompatActivity {
         });
 
 
-        final com.github.clans.fab.FloatingActionButton swapCamera = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.swap_camera);
+        final View swapCamera = findViewById(R.id.swap_camera);
+        final ImageView swapCameraImageView = (ImageView) findViewById(R.id.swap_camera_image);
+
+        if(!mUseRear)
+            swapCameraImageView.setImageResource(R.drawable.ic_camera_rear_white_48dp);
+
         swapCamera.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -178,12 +193,24 @@ public class CaptureSceneActivity extends AppCompatActivity {
                 mUseRear = !mUseRear;
 
                 if(mUseRear){
-                    swapCamera.setImageResource(R.drawable.ic_camera_rear_white_48dp);
-                    imageView.setScaleX(1);
+                    swapCamera.animate().scaleX(0).setDuration(125).withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            swapCameraImageView.setImageResource(R.drawable.ic_camera_front_white_48dp);
+                            swapCamera.animate().scaleX(1).start();
+                        }
+                    }).start();
+                    invertImageView(imageView, 1);
                 }
                 else{
-                    swapCamera.setImageResource(R.drawable.ic_camera_front_white_48dp);
-                    imageView.setScaleX(-1);
+                    swapCamera.animate().scaleX(0).setDuration(125).withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            swapCameraImageView.setImageResource(R.drawable.ic_camera_rear_white_48dp);
+                            swapCamera.animate().scaleX(1).start();
+                        }
+                    }).start();
+                    invertImageView(imageView, -1);
                 }
 
                 createAndReplaceCameraFragment(mUseRear);
@@ -272,7 +299,10 @@ public class CaptureSceneActivity extends AppCompatActivity {
         if(uri == null)
             throw new IllegalArgumentException("Uri cannot be null.");
 
-        final ImageWithMask imageView = (ImageWithMask) findViewById(R.id.imageView);
+        final ImageWithMask imageView = (ImageWithMask) findViewById(R.id.image_view);
+
+        if(!mUseRear)
+            invertImageView(imageView, -1);
 
         AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
             public ProgressDialog processDialog;
@@ -293,9 +323,9 @@ public class CaptureSceneActivity extends AppCompatActivity {
 
             @Override
             protected Void doInBackground(Void... params) {
-                final Bitmap bitmap;
+
                 try {
-                    bitmap = BitmapLoader.load(getContentResolver(), uri, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
+                    imageViewBitmap = BitmapLoader.load(getContentResolver(), uri, Constants.IMAGE_OPTIMAL_WIDTH, Constants.IMAGE_OPTIMAL_HEIGHT);
                 } catch (IOException e) {
                     Log.e(TAG, "Image cannot be loaded. " + e.toString() + ": " + e.getMessage());
                     runOnUiThread(new Runnable() {
@@ -310,7 +340,7 @@ public class CaptureSceneActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        imageView.setImage(bitmap);
+                        imageView.setImage(imageViewBitmap);
                         imageView.invalidate();
                     }
                 });
@@ -320,6 +350,11 @@ public class CaptureSceneActivity extends AppCompatActivity {
         };
 
         task.execute();
+    }
+
+    private void invertImageView(ImageWithMask imageView, int scaleX) {
+        imageView.setScale(scaleX);
+        imageView.invalidate();
     }
 
     private boolean isImageSelected(){
