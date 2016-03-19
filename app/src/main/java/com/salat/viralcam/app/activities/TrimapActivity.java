@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
@@ -68,6 +67,7 @@ public class TrimapActivity extends AppCompatActivity {
     private View buttonEdit;
     private View brushGroup;
     private View editDoneGroup;
+    private Bitmap lastImageResult;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -252,8 +252,8 @@ public class TrimapActivity extends AppCompatActivity {
                         alpha.recycle();
 
                         // draw final image
-                        final Bitmap result = background.copy(Bitmap.Config.ARGB_8888, true);
-                        Canvas resultCanvas = new Canvas(result);
+                        lastImageResult = background.copy(Bitmap.Config.ARGB_8888, true);
+                        Canvas resultCanvas = new Canvas(lastImageResult);
                         tempPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_OVER));
                         final float scale2 = orientation == Configuration.ORIENTATION_LANDSCAPE ?
                                 background.getHeight() / (float) foreground.getHeight() :
@@ -267,10 +267,6 @@ public class TrimapActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                // drawTrimapView contains clear matrix with current scale and translation
-                                Matrix drawTrimapViewMatrix = drawTrimapView.getImageMatrix();
-                                setImageViewBitmapWithMatrix(drawTrimapViewMatrix, imageView, result);
-
                                 prepareShowResultUI();
                             }
                         });
@@ -383,6 +379,12 @@ public class TrimapActivity extends AppCompatActivity {
     }
 
     private void prepareShowResultUI() {
+        if(lastImageResult != null){
+            // drawTrimapView contains clear matrix with current scale and translation
+            Matrix drawTrimapViewMatrix = drawTrimapView.getImageMatrix();
+            setImageViewBitmapWithMatrix(drawTrimapViewMatrix, imageView, lastImageResult);
+        }
+
         drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DONE);
         drawTrimapView.setVisibility(View.INVISIBLE);
 //      buttonShare.setVisibility(View.VISIBLE);
@@ -436,10 +438,10 @@ public class TrimapActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        Snackbar.make(layout, "Clicked at '" + item.getTitle() + "' [" + id + "]", Snackbar.LENGTH_SHORT).show();
+        //Snackbar.make(layout, "Clicked at '" + item.getTitle() + "' [" + id + "]", Snackbar.LENGTH_SHORT).show();
 
         if (id == android.R.id.home){
-            if(drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.TUNING)
+            if(drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.DONE || drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.INIT)
                 super.onBackPressed();
             else
                 prepareShowResultUI();
