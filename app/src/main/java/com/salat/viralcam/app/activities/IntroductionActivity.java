@@ -18,6 +18,7 @@ public class IntroductionActivity extends AppIntro2 {
         addSlide(SampleSlideFragment.newInstance(R.layout.introduction_slide_1));
         addSlide(AppIntroFragment.newInstance("Share and profit", "Show your composition to the world.", R.drawable.ic_share_white_48dp, 0xFF4a148c));
 //        addSlide(AppIntroFragment.newInstance("", "", R.drawable.placeholder_image, 0xFF4a148c));
+
         setFadeAnimation();
     }
 
