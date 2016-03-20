@@ -14,7 +14,8 @@ import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.util.Constants;
 
 public class HomeScreenActivity extends AppCompatActivity {
-    private static final int CAPTURE_SCENE_RESULT = 42;
+    private static final int CAPTURE_SCENE_REQUEST = 42;
+    private static final int INTRODUCTION_REQUEST = 43;
 
     private static final String PRIVATE_PREF = "viralcam_private_pref";
     private static final String VERSION_KEY = "VERSION_KEY";
@@ -24,17 +25,14 @@ public class HomeScreenActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (shouldBeWhatsNewShown()) {
-            showWhatsNewDialog();
+        if(shouldShowIntroduction()){
+            openIntroductionActivity();
         }
-//        else if(shouldShowIntroduction()){
-//            openIntroductionActivity();
-//        }
-        else {
+        else if (shouldBeWhatsNewShown()) {
+            showWhatsNewDialog();
+        } else {
             openCaptureScreenActivity();
         }
-
-        setContentView(R.layout.activity_home_screen);
     }
 
     private boolean shouldShowIntroduction() {
@@ -54,16 +52,20 @@ public class HomeScreenActivity extends AppCompatActivity {
     }
 
     private void openIntroductionActivity() {
-        startActivityForResult(new Intent(this, IntroductionActivity.class), CAPTURE_SCENE_RESULT);
+        startActivityForResult(new Intent(this, IntroductionActivity.class), INTRODUCTION_REQUEST);
     }
 
     private void openCaptureScreenActivity() {
-        startActivityForResult(new Intent(this, CaptureSceneActivity.class), CAPTURE_SCENE_RESULT);
+        startActivityForResult(new Intent(this, CaptureSceneActivity.class), CAPTURE_SCENE_REQUEST);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == INTRODUCTION_REQUEST)
+            openCaptureScreenActivity();
+
         finish();
     }
 

@@ -458,6 +458,26 @@ public class TrimapActivity extends AppCompatActivity {
             return true;
         }
 
+        if(id == R.id.action_help){
+            startActivityForResult(new Intent(this, IntroductionActivity.class), 0);
+            return true;
+        }
+
+        if(id == R.id.action_feedback){
+            Intent i = new Intent(Intent.ACTION_SEND);
+            i.setType("message/rfc822");
+            i.putExtra(Intent.EXTRA_EMAIL, new String[]{"salat.marek42@gmail.com"});
+            i.putExtra(Intent.EXTRA_SUBJECT, "ViralCam - Feedback");
+            i.putExtra(Intent.EXTRA_TEXT, "");
+            try {
+                startActivity(Intent.createChooser(i, "Send mail..."));
+            } catch (android.content.ActivityNotFoundException ex) {
+                Toast.makeText(this, "There are no email clients installed.", Toast.LENGTH_SHORT).show();
+            }
+
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 
