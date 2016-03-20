@@ -30,30 +30,18 @@ public class HomeScreenActivity extends AppCompatActivity {
         AnalyticsTrackers.tracker().get(AnalyticsTrackers.Target.APP);
 
         if(shouldShowIntroduction()){
+            neverShowIntroAgain();
+            neverShowWhatsNewAgain();
             openIntroductionActivity();
         }
         else if (shouldBeWhatsNewShown()) {
+            neverShowWhatsNewAgain();
             showWhatsNewDialog();
         } else {
             openCaptureScreenActivity();
         }
     }
 
-    private boolean shouldShowIntroduction() {
-        SharedPreferences sharedPref = getSharedPreferences(PRIVATE_PREF, Context.MODE_PRIVATE);
-
-        boolean wasIntroAlreadyShown = sharedPref.getBoolean(INTRO_HAS_BEEN_SHOWN, false);
-
-        if (Constants.ALWAYS_SHOW_INTRODUCTION || !wasIntroAlreadyShown) {
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putBoolean(INTRO_HAS_BEEN_SHOWN, true);
-            editor.apply();
-
-            return true;
-        }
-
-        return false;
-    }
 
     private void openIntroductionActivity() {
         startActivityForResult(new Intent(this, IntroductionActivity.class), INTRODUCTION_REQUEST);
@@ -73,6 +61,15 @@ public class HomeScreenActivity extends AppCompatActivity {
         finish();
     }
 
+    private boolean shouldShowIntroduction() {
+        SharedPreferences sharedPref = getSharedPreferences(PRIVATE_PREF, Context.MODE_PRIVATE);
+
+        boolean wasIntroAlreadyShown = sharedPref.getBoolean(INTRO_HAS_BEEN_SHOWN, false);
+
+        return Constants.ALWAYS_SHOW_INTRODUCTION || !wasIntroAlreadyShown;
+
+    }
+
     private boolean shouldBeWhatsNewShown() {
         SharedPreferences sharedPref = getSharedPreferences(PRIVATE_PREF, Context.MODE_PRIVATE);
 
@@ -81,14 +78,25 @@ public class HomeScreenActivity extends AppCompatActivity {
 
         if (Constants.ALWAYS_SHOW_WHATS_NEW || currentVersionNumber > savedVersionNumber) {
             showWhatsNewDialog();
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putInt(VERSION_KEY, currentVersionNumber);
-            editor.apply();
-
             return true;
         }
 
         return false;
+    }
+
+    private void neverShowIntroAgain() {
+        SharedPreferences sharedPref = getSharedPreferences(PRIVATE_PREF, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(INTRO_HAS_BEEN_SHOWN, true);
+        editor.apply();
+    }
+
+    private void neverShowWhatsNewAgain() {
+        int currentVersionNumber = BuildConfig.VERSION_CODE;
+        SharedPreferences sharedPref = getSharedPreferences(PRIVATE_PREF, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt(VERSION_KEY, currentVersionNumber);
+        editor.apply();
     }
 
     private void showWhatsNewDialog() {
