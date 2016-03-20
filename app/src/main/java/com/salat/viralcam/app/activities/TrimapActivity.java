@@ -30,6 +30,9 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
+import com.salat.viralcam.app.AnalyticsTrackers;
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.util.BitmapLoader;
 import com.salat.viralcam.app.util.Constants;
@@ -52,6 +55,7 @@ public class TrimapActivity extends AppCompatActivity {
     public static final String INTENT_EXTRA_BACKGROUND_IMAGE_URI = "TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_URI";
     public static final String INTENT_EXTRA_FOREGROUND_IMAGE_URI = "TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_URI";
     public static final int BOUNDINGBOX_PADDING = 4;
+    private static final int SHARE_REQUEST = 99;
     private View layout;
 
     private ProgressDialog processDialog;
@@ -68,6 +72,7 @@ public class TrimapActivity extends AppCompatActivity {
     private View brushGroup;
     private View editDoneGroup;
     private Bitmap lastImageResult;
+    private Tracker tracker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +82,9 @@ public class TrimapActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trimap);
+
+        AnalyticsTrackers.initialize(this);
+        tracker = AnalyticsTrackers.tracker().get(AnalyticsTrackers.Target.APP);
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitle("");
@@ -175,6 +183,8 @@ public class TrimapActivity extends AppCompatActivity {
             public void onClick(View v) {
                 processDialog.show();
 
+                final long timeBeforeCalculation = System.currentTimeMillis();
+
                 Thread task = new Thread() {
                     Paint bitmapPaint = new Paint(Paint.DITHER_FLAG);
                     final int orientation = getResources().getConfiguration().orientation;
@@ -264,6 +274,8 @@ public class TrimapActivity extends AppCompatActivity {
 
                         trimap.recycle();
 
+                        logImageProcessingDuration(System.currentTimeMillis() - timeBeforeCalculation);
+
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -307,6 +319,8 @@ public class TrimapActivity extends AppCompatActivity {
         buttonEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                logEditAction();
+
                 if (drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.DONE) {
                     setImageViewBitmapWithMatrix(drawTrimapView.getImageMatrix(), imageView, foreground);
 
@@ -459,11 +473,14 @@ public class TrimapActivity extends AppCompatActivity {
         }
 
         if(id == R.id.action_help){
+            logShowHelpAction();
             startActivityForResult(new Intent(this, IntroductionActivity.class), 0);
             return true;
         }
 
         if(id == R.id.action_feedback){
+            logSendFeedbackAction();
+
             Intent i = new Intent(Intent.ACTION_SEND);
             i.setType("message/rfc822");
             i.putExtra(Intent.EXTRA_EMAIL, new String[]{"salat.marek42@gmail.com"});
@@ -482,10 +499,52 @@ public class TrimapActivity extends AppCompatActivity {
     }
 
     private void swapImagesAction() {
+        logSwapImageAction();
+
         Intent intent = new Intent(this, TrimapActivity.class);
         intent.putExtra(INTENT_EXTRA_FOREGROUND_IMAGE_URI, backgroundUri.toString());
         intent.putExtra(INTENT_EXTRA_BACKGROUND_IMAGE_URI, foregroundUri.toString());
         startActivity(intent);
+    }
+
+    private void logEditAction() {
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(AnalyticsTrackers.Category.Action.toString())
+                .setAction(AnalyticsTrackers.Action.EditTrimap.toString())
+                .setValue(1)
+                .build());
+    }
+
+    private void logImageProcessingDuration(long duration) {
+        tracker.send(new HitBuilders.TimingBuilder()
+                .setCategory(AnalyticsTrackers.Category.Timing.toString())
+                .setLabel(AnalyticsTrackers.Label.ImageProcessingDuration.toString())
+                .setValue(duration)
+                .build());
+    }
+
+    private void logSendFeedbackAction() {
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(AnalyticsTrackers.Category.Action.toString())
+                .setAction(AnalyticsTrackers.Action.SendFeedback.toString())
+                .setValue(1)
+                .build());
+    }
+
+    private void logShowHelpAction() {
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(AnalyticsTrackers.Category.Action.toString())
+                .setAction(AnalyticsTrackers.Action.ShowHelp.toString())
+                .setValue(1)
+                .build());
+    }
+
+    private void logSwapImageAction() {
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(AnalyticsTrackers.Category.Action.toString())
+                .setAction(AnalyticsTrackers.Action.SwapForegroundAndBackground.toString())
+                .setValue(1)
+                .build());
     }
 
     private Bitmap getBitmap(Uri imageUri, Uri defaultImageUri) {
@@ -541,7 +600,7 @@ public class TrimapActivity extends AppCompatActivity {
                     share.setType("image/png");
 
                     share.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
-                    startActivity(Intent.createChooser(share, "Share Image"));
+                    startActivityForResult(Intent.createChooser(share, "Share Image"), SHARE_REQUEST);
                 }
             }
         });
@@ -566,8 +625,25 @@ public class TrimapActivity extends AppCompatActivity {
         return true;
     }
 
-    private native void calculateAlphaMask(Bitmap image, Bitmap trimap, Bitmap outAlpha);
-    private native void findBoundingBox(Bitmap trimap, Rect rect);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == SHARE_REQUEST){
+            logShareAction();
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void logShareAction() {
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(AnalyticsTrackers.Category.Action.toString())
+                .setAction(AnalyticsTrackers.Action.Share.toString())
+                .setValue(1)
+                .build());
+    }
+
+    public native void calculateAlphaMask(Bitmap image, Bitmap trimap, Bitmap outAlpha);
+    public native void findBoundingBox(Bitmap trimap, Rect rect);
 
     static {
         System.loadLibrary("nativeAlphaMatte");

@@ -4,14 +4,16 @@ import android.os.Bundle;
 
 import com.github.paolorotolo.appintro.AppIntro2;
 import com.github.paolorotolo.appintro.AppIntroFragment;
+import com.salat.viralcam.app.AnalyticsTrackers;
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.fragments.SampleSlideFragment;
 
 public class IntroductionActivity extends AppIntro2 {
-
-
     @Override
     public void init(Bundle savedInstanceState) {
+        AnalyticsTrackers.initialize(this);
+        AnalyticsTrackers.tracker().get(AnalyticsTrackers.Target.APP);
+
         addSlide(AppIntroFragment.newInstance("ViralCam", "Change the reality", R.drawable.viralcam_highres_icon_512x512, 0xFF4a148c));
         addSlide(AppIntroFragment.newInstance("Capture the scene", "Select an image you want to edit. You can also change the blend by swiping over the image.", R.drawable.ic_camera_white_48dp, 0xFF4a148c));
         addSlide(AppIntroFragment.newInstance("Roughly mark the edge", "It helps for better estimate what is foreground. You do not have to be precise. It can be tuned later.", R.drawable.ic_gesture_white_48dp, 0xFF4a148c));

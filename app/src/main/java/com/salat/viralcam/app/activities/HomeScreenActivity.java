@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.webkit.WebView;
 
+import com.salat.viralcam.app.AnalyticsTrackers;
 import com.salat.viralcam.app.BuildConfig;
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.util.Constants;
@@ -24,6 +25,9 @@ public class HomeScreenActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        AnalyticsTrackers.initialize(this);
+        AnalyticsTrackers.tracker().get(AnalyticsTrackers.Target.APP);
 
         if(shouldShowIntroduction()){
             openIntroductionActivity();

@@ -6,9 +6,8 @@ import android.app.FragmentManager;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -28,6 +27,9 @@ import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
+import com.salat.viralcam.app.AnalyticsTrackers;
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.fragments.CameraLollipopFragment;
 import com.salat.viralcam.app.util.BitmapLoader;
@@ -53,6 +55,7 @@ public class CaptureSceneActivity extends AppCompatActivity {
     private static final String KEY_USE_REAR_CAMERA = "CaptureSceneActivity.KEY_USE_REAR_CAMERA";
     private boolean mUseRear = true;
     private Bitmap imageViewBitmap;
+    private Tracker tracker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +66,9 @@ public class CaptureSceneActivity extends AppCompatActivity {
         onWindowFocusChanged(true);
 
         super.onCreate(savedInstanceState);
+
+        AnalyticsTrackers.initialize(this);
+        tracker = AnalyticsTrackers.tracker().get(AnalyticsTrackers.Target.APP);
 
         setContentView(R.layout.activity_capture_scene);
 
@@ -98,6 +104,8 @@ public class CaptureSceneActivity extends AppCompatActivity {
         takePictureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                logTakePictureAction();
+
                 FragmentManager fm = getFragmentManager();
                 Fragment cameraFragment = fm.findFragmentByTag(CAMERA_FRAGMENT);
 
@@ -152,6 +160,7 @@ public class CaptureSceneActivity extends AppCompatActivity {
                     case 3:  resourceId = R.raw.star_warse; break;
 
                     default:{
+                        logSelectBackground(AnalyticsTrackers.Label.CustomBackground);
 
                         Intent intent = new Intent();
                         // Show only images, no videos or anything else
@@ -163,6 +172,7 @@ public class CaptureSceneActivity extends AppCompatActivity {
                         return;
                     }
                 }
+                logSelectBackground(AnalyticsTrackers.Label.PredefinedBackground);
 
                 imageUri = Constants.getUriFromResource(getResources(), resourceId);
                 setImageViewBackground(imageUri);
@@ -192,6 +202,8 @@ public class CaptureSceneActivity extends AppCompatActivity {
             public void onClick(View v) {
                 mUseRear = !mUseRear;
 
+                logSwapCameraAction();
+
                 if(mUseRear){
                     swapCamera.animate().scaleX(0).setDuration(125).withEndAction(new Runnable() {
                         @Override
@@ -218,6 +230,46 @@ public class CaptureSceneActivity extends AppCompatActivity {
         });
 
         dialog = builder.create();
+    }
+
+    private void logSelectBackground(AnalyticsTrackers.Label label) {
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(AnalyticsTrackers.Category.Action.toString())
+                .setAction(AnalyticsTrackers.Action.SelectBackground.toString())
+                .setLabel(label.toString())
+                .setValue(1)
+                .build());
+    }
+
+    private void logSwapCameraAction() {
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(AnalyticsTrackers.Category.Action.toString())
+                .setAction(AnalyticsTrackers.Action.SwapCamera.toString())
+                .setLabel((mUseRear
+                        ? AnalyticsTrackers.Label.UseRearCamera
+                        : AnalyticsTrackers.Label.UseFrontCamera).toString())
+                .setValue(1)
+                .build());
+    }
+
+    private void logTakePictureAction() {
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(AnalyticsTrackers.Category.Action.toString())
+                .setAction(AnalyticsTrackers.Action.TakePicture.toString())
+                .setLabel((mUseRear
+                        ? AnalyticsTrackers.Label.UsingRearCamera
+                        : AnalyticsTrackers.Label.UsingFrontCamera).toString())
+                .setValue(1)
+                .build());
+
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(AnalyticsTrackers.Category.State.toString())
+                .setAction(AnalyticsTrackers.Action.TakePicture.toString())
+                .setLabel((getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
+                        ? AnalyticsTrackers.Label.LandscapeMode
+                        : AnalyticsTrackers.Label.PortraitMode).toString())
+                .setValue(1)
+                .build());
     }
 
     @NonNull
