@@ -127,6 +127,7 @@ import fragments.CameraFragment;
 public class CameraLollipopFragment extends Fragment implements View.OnClickListener, FragmentCompat.OnRequestPermissionsResultCallback, CameraFragment {
 
 
+    private static final String ARG_USE_REAR_CAMERA = "ARG_USE_REAR_CAMERA";
     private static OnCaptureCompleted mOnCaptureCompletedAction;
 
     /**
@@ -548,14 +549,22 @@ public class CameraLollipopFragment extends Fragment implements View.OnClickList
             }
         }
     };
+    private boolean mUserRearCamera;
 
-    public static CameraLollipopFragment newInstance() {
-        return new CameraLollipopFragment();
+    public static CameraLollipopFragment newInstance(boolean useRearCamera) {
+        CameraLollipopFragment fragment = new CameraLollipopFragment();
+
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_USE_REAR_CAMERA, useRearCamera);
+        fragment.setArguments(args);
+
+        return fragment;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        mUserRearCamera = getArguments().getBoolean(ARG_USE_REAR_CAMERA, true);
         return inflater.inflate(R.layout.fragment_camera2_basic, container, false);
     }
 
@@ -657,6 +666,13 @@ public class CameraLollipopFragment extends Fragment implements View.OnClickList
             for (String cameraId : manager.getCameraIdList()) {
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
+
+                if(!mUserRearCamera && (characteristics.get(CameraCharacteristics.LENS_FACING) != CameraCharacteristics.LENS_FACING_FRONT)){
+                    continue;
+                }
+                if(mUserRearCamera && (characteristics.get(CameraCharacteristics.LENS_FACING) != CameraCharacteristics.LENS_FACING_BACK)){
+                    continue;
+                }
 
 //                // We only use a camera that supports RAW in this sample.
 //                if (!contains(characteristics.get(
@@ -1012,10 +1028,7 @@ public class CameraLollipopFragment extends Fragment implements View.OnClickList
 
             // Find rotation of device in degrees (reverse device orientation for front-facing
             // cameras).
-            int rotation = (mCharacteristics.get(CameraCharacteristics.LENS_FACING) ==
-                    CameraCharacteristics.LENS_FACING_FRONT) ?
-                    (360 + ORIENTATIONS.get(deviceRotation)) % 360 :
-                    (360 - ORIENTATIONS.get(deviceRotation)) % 360;
+            int rotation = (360 - ORIENTATIONS.get(deviceRotation)) % 360;
 
             Matrix matrix = new Matrix();
             RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);

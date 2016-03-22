@@ -1,54 +1,22 @@
 package com.salat.viralcam.app.activities;
 
-import com.github.clans.fab.FloatingActionButton;
-import com.salat.viralcam.app.BuildConfig;
-import com.salat.viralcam.app.R;
-import com.salat.viralcam.app.fragments.CameraLollipopFragment;
-import com.salat.viralcam.app.util.BitmapLoader;
-import com.salat.viralcam.app.util.Constants;
-import com.salat.viralcam.app.views.ImageWithMask;
-
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.GestureDetector;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewTreeObserver;
-import android.view.Window;
-import android.view.WindowManager;
 import android.webkit.WebView;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
 
-import java.io.IOException;
-
-import fragments.CameraFragment;
-import fragments.CameraOldVersionsFragment;
+import com.salat.viralcam.app.AnalyticsTrackers;
+import com.salat.viralcam.app.BuildConfig;
+import com.salat.viralcam.app.R;
+import com.salat.viralcam.app.util.Constants;
 
 public class HomeScreenActivity extends AppCompatActivity {
-    private static final int CAPTURE_SCENE_RESULT = 42;
+    private static final int CAPTURE_SCENE_REQUEST = 42;
+    private static final int INTRODUCTION_REQUEST = 43;
 
     private static final String PRIVATE_PREF = "viralcam_private_pref";
     private static final String VERSION_KEY = "VERSION_KEY";
@@ -58,17 +26,39 @@ public class HomeScreenActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (shouldBeWhatsNewShown()) {
-            showWhatsNewDialog();
+        AnalyticsTrackers.initialize(this);
+        AnalyticsTrackers.tracker().get(AnalyticsTrackers.Target.APP);
+
+        if(shouldShowIntroduction()){
+            neverShowIntroAgain();
+            neverShowWhatsNewAgain();
+            openIntroductionActivity();
         }
-//        else if(shouldShowIntroduction()){
-//            openIntroductionActivity();
-//        }
-        else {
+        else if (shouldBeWhatsNewShown()) {
+            neverShowWhatsNewAgain();
+            showWhatsNewDialog();
+        } else {
             openCaptureScreenActivity();
         }
+    }
 
-        setContentView(R.layout.activity_home_screen);
+
+    private void openIntroductionActivity() {
+        startActivityForResult(new Intent(this, IntroductionActivity.class), INTRODUCTION_REQUEST);
+    }
+
+    private void openCaptureScreenActivity() {
+        startActivityForResult(new Intent(this, CaptureSceneActivity.class), CAPTURE_SCENE_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == INTRODUCTION_REQUEST)
+            openCaptureScreenActivity();
+
+        finish();
     }
 
     private boolean shouldShowIntroduction() {
@@ -76,29 +66,8 @@ public class HomeScreenActivity extends AppCompatActivity {
 
         boolean wasIntroAlreadyShown = sharedPref.getBoolean(INTRO_HAS_BEEN_SHOWN, false);
 
-        if (Constants.ALWAYS_SHOW_INTRODUCTION || !wasIntroAlreadyShown) {
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putBoolean(INTRO_HAS_BEEN_SHOWN, true);
-            editor.apply();
+        return Constants.ALWAYS_SHOW_INTRODUCTION || !wasIntroAlreadyShown;
 
-            return true;
-        }
-
-        return false;
-    }
-
-    private void openIntroductionActivity() {
-        startActivityForResult(new Intent(this, IntroductionActivity.class), CAPTURE_SCENE_RESULT);
-    }
-
-    private void openCaptureScreenActivity() {
-        startActivityForResult(new Intent(this, CaptureSceneActivity.class), CAPTURE_SCENE_RESULT);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        finish();
     }
 
     private boolean shouldBeWhatsNewShown() {
@@ -109,14 +78,25 @@ public class HomeScreenActivity extends AppCompatActivity {
 
         if (Constants.ALWAYS_SHOW_WHATS_NEW || currentVersionNumber > savedVersionNumber) {
             showWhatsNewDialog();
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putInt(VERSION_KEY, currentVersionNumber);
-            editor.apply();
-
             return true;
         }
 
         return false;
+    }
+
+    private void neverShowIntroAgain() {
+        SharedPreferences sharedPref = getSharedPreferences(PRIVATE_PREF, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(INTRO_HAS_BEEN_SHOWN, true);
+        editor.apply();
+    }
+
+    private void neverShowWhatsNewAgain() {
+        int currentVersionNumber = BuildConfig.VERSION_CODE;
+        SharedPreferences sharedPref = getSharedPreferences(PRIVATE_PREF, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt(VERSION_KEY, currentVersionNumber);
+        editor.apply();
     }
 
     private void showWhatsNewDialog() {

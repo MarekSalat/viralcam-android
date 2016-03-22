@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--  The property id associated with this analytics tracker -->
+    <string name="ga_trackingId">UA-75320488-1</string>
+
+    <!-- End current session if app sleeps for a period of time -->
+    <integer name="ga_sessionTimeout">300</integer>
+
+    <!-- Enable automatic Activity measurement -->
+    <bool name="ga_autoActivityTracking">true</bool>
+
+    <!-- catch and report uncaught exceptions from the app -->
+    <bool name="ga_reportUncaughtExceptions">true</bool>
+
+    <integer name="ga_sessionTimeout">360</integer>
+
+    <!-- The screen names that will appear in reports -->
+    <screenName name="com.salat.viralcam.app.activities.HomeScreenActivity">
+        Home Screen
+    </screenName>
+    <screenName name="com.salat.viralcam.app.activities.IntroductionActivity">
+        Introduction
+    </screenName>
+    <screenName name="com.salat.viralcam.app.activities.CaptureSceneActivity">
+        Capture scene
+    </screenName>
+    <screenName name="com.salat.viralcam.app.activities.TrimapActivity">
+        Trimap
+    </screenName>
+
+    <string name="ga_logLevel">verbose</string>
+
+    <!--
+      See Project Structure -> Analytics -> Google Analytics -> Learn More
+      to learn more about configuring this file.
+    -->
+</resources>

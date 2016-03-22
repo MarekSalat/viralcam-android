@@ -1,0 +1,109 @@
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/capture_sceene_coordinator_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.salat.viralcam.app.activities.CaptureSceneActivity"
+    android:clipChildren="false"
+    android:clipToPadding="false" >
+
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000" />
+
+    <com.salat.viralcam.app.views.ImageWithMask
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/image_view"
+        android:alpha=".65"
+        android:layout_gravity="left|top" >
+
+    </com.salat.viralcam.app.views.ImageWithMask>
+
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/appbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/toolbar_background"
+        android:fitsSystemWindows="true"
+        app:elevation="0px"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:popupTheme="@style/AppTheme.PopupOverlay" />
+    </android.support.design.widget.AppBarLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false" >
+
+        <FrameLayout
+            android:id="@+id/swap_camera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginRight="12dp"
+            android:padding="24dp"
+            android:clickable="true"
+            android:background="@drawable/circle_gradient"
+            android:foreground="?attr/selectableItemBackgroundBorderless" >
+            <ImageView
+                android:id="@+id/swap_camera_image"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_camera_front_white_48dp"/>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/take_picture_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:padding="24dp"
+            android:clickable="true"
+            android:background="@drawable/circle_gradient"
+            android:foreground="?attr/selectableItemBackgroundBorderless" >
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_camera_white_48dp"/>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/select_image_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginRight="12dp"
+            android:padding="24dp"
+            android:background="@drawable/circle_gradient"
+            android:foreground="?attr/selectableItemBackgroundBorderless" >
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_insert_photo_white_48dp"
+                android:background="@android:color/transparent" />
+        </FrameLayout>
+
+
+    </RelativeLayout>
+
+
+
+</android.support.design.widget.CoordinatorLayout>

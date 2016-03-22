@@ -268,11 +268,9 @@ static void calculateAlphaPatchMatch(Bitmap &image,
                             continue;
 
                         Sample &second_sample = samples[y2][x2];
-                        unsigned long sample_foreground_index = sample.foreground_index;
-                        unsigned long sample_background_index = sample.background_index;
 
-                        const Point &foreground_point = foregroundBoundary[sample_foreground_index];
-                        const Point &background_point = backgroundBoundary[sample_background_index];
+                        const Point &foreground_point = foregroundBoundary[second_sample.foreground_index];
+                        const Point &background_point = backgroundBoundary[second_sample.background_index];
 
                         const RGBA &foreground_color = (RGBA&)image(foreground_point.y, foreground_point.x);
                         const RGBA &background_color = (RGBA&)image(background_point.y, background_point.x);
@@ -285,7 +283,7 @@ static void calculateAlphaPatchMatch(Bitmap &image,
 
                         if (cost < sample.cost)
                         {
-                            sample.foreground_index = sample_foreground_index;
+                            sample.foreground_index = second_sample.foreground_index;
                             sample.background_index = second_sample.background_index;
                             sample.cost = cost;
                             sample.alpha = alpha;
@@ -293,26 +291,32 @@ static void calculateAlphaPatchMatch(Bitmap &image,
                     }
                 }
                 // random walk
-                int max_boundary_width = max(foregroundBoundary.size(), backgroundBoundary.size());
+                int boundary_width = static_cast<int>(min(foregroundBoundary.size(), backgroundBoundary.size()));
 
                 float r;
-                for (int k = 0; (r = max_boundary_width * powf(0.5f, k)) > 1; k++)
+                for (int k = 0; (r = boundary_width * powf(0.5f, k)) > 1; k++)
                 {
-                    unsigned long foreground_distance = (unsigned long) (r * (rand() / (RAND_MAX + 1.f)));
-                    unsigned long background_distance = (unsigned long) (r * (rand() / (RAND_MAX + 1.f)));
+                    unsigned long foreground_distance = (unsigned long) (r * ((rand() / (float)(RAND_MAX) + 1.0)*2.0 - 1.0));
+                    unsigned long background_distance = (unsigned long) (r * ((rand() / (float)(RAND_MAX) + 1.0)*2.0 - 1.0));
 
-                    // what about modulo? for now it moving only forward, maybe it would be better to circle around
-                    unsigned long sample_foreground_index = sample.foreground_index + foreground_distance;
-                    unsigned long sample_background_index = sample.background_index + background_distance;
+                    unsigned long foreground_index = sample.foreground_index + foreground_distance;
+                    unsigned long background_index = sample.background_index + background_distance;
 
-                    sample_foreground_index = sample_foreground_index >= foregroundBoundary.size() ? sample_foreground_index - foregroundBoundary.size() : sample_foreground_index;
-                    sample_background_index = sample_background_index >= backgroundBoundary.size() ? sample_background_index - backgroundBoundary.size() : sample_background_index;
+                    if(foreground_index < 0)
+                        foreground_index = foregroundBoundary.size() + foreground_index;
+                    if(foreground_index >= foregroundBoundary.size())
+                        foreground_index = foreground_index - foregroundBoundary.size();
 
-//                    if (sample_foreground_index < 0 || sample_foreground_index >= foregroundBoundary.size() || sample_background_index < 0 || sample_background_index >= backgroundBoundary.size())
-//                        continue;
+                    if(background_index < 0)
+                        background_index = backgroundBoundary.size() + background_index;
+                    if(background_index >= backgroundBoundary.size())
+                        background_index = background_index - backgroundBoundary.size();
 
-                    const Point &foreground_point = foregroundBoundary[sample_foreground_index];
-                    const Point &background_point = backgroundBoundary[sample_background_index];
+                    if (foreground_index < 0 || foreground_index >= foregroundBoundary.size() || background_index < 0 || background_index >= backgroundBoundary.size())
+                        continue;
+
+                    const Point &foreground_point = foregroundBoundary[foreground_index];
+                    const Point &background_point = backgroundBoundary[background_index];
 
                     const RGBA &foreground_color = (RGBA&)image(foreground_point.y, foreground_point.x);
                     const RGBA &background_color = (RGBA&)image(background_point.y, background_point.x);
@@ -338,9 +342,9 @@ static void calculateAlphaPatchMatch(Bitmap &image,
 
 void expansionOfKnownRegions(Bitmap &img, Bitmap &trimap, int niter)
 {
-    const int iter = 12;
-    for (int i = 0; i < iter; ++i)
-        expansionOfKnownRegionsInternal(img, trimap, 3, min(16, iter - i));
+    //const int iter = 12;
+    //for (int i = 0; i < iter; ++i)
+        expansionOfKnownRegionsInternal(img, trimap, 10, 5);
     erodeFB(trimap, 2);
 }
 

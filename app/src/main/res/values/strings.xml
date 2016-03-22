@@ -35,6 +35,18 @@
         <ul>
             <li>What\'s new dialog will be shown after update when you start application.</li>
         </ul>
+        <ul>
+            <li>Redesign
+            </li>
+        </ul>
+        <ul>
+            <li>Swap between front facing and rear camera
+            </li>
+        </ul>
+        <ul>
+            <li>Swap foreground and background image
+            </li>
+        </ul>
         <hr/>
         <h3>Fixed bugs</h3>
         <ul>
@@ -45,6 +57,9 @@
         ]]></string>
     <string name="title_activity_introduction">Introduction</string>
     <string name="section_format">Hello World from section: %1$d</string>
-    <string name="title_activity_compute_shader">ComputeShaderActivity</string>
+    <string name="capture_scene_button_description">capture scene</string>
+    <string name="select_button_button_description">select image</string>
+    <string name="title_activity_ripple_test">RippleTest</string>
+    <string name="title_activity_matting_evaluation">Matting Evaluation</string>
 
 </resources>
