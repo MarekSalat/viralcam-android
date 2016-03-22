@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="com.salat.viralcam.app.activities.MattingEvaluationActivity"
+    android:keepScreenOn="true" >
+
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/app_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fitsSystemWindows="true"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <android.support.design.widget.CollapsingToolbarLayout
+            android:id="@+id/toolbar_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fitsSystemWindows="true"
+            app:contentScrim="?attr/colorPrimary"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingLeft="32dp"
+                android:paddingRight="32dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="32dp"
+                android:layout_marginBottom="72sp">
+                <TextView
+                    android:id="@+id/avg_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="16dp"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:text="AVG time"/>
+                <TextView
+                    android:id="@+id/avg_time_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/avg_time"
+                    android:textSize="16sp"
+                    android:text="0"/>
+
+                <TextView
+                    android:id="@+id/avg_time_per_unknown_pixel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="16dp"
+                    android:layout_below="@id/avg_time"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:text="AVG time per unknown pixel"/>
+                <TextView
+                    android:id="@+id/avg_time_per_unknown_pixel_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/avg_time_per_unknown_pixel"
+                    android:layout_alignTop="@id/avg_time_per_unknown_pixel"
+                    android:textSize="16sp"
+                    android:text="0"/>
+
+                <TextView
+                    android:id="@+id/avg_mse"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="16dp"
+                    android:layout_below="@id/avg_time_per_unknown_pixel"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:text="AVG MSE"/>
+                <TextView
+                    android:id="@+id/avg_mse_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/avg_mse"
+                    android:layout_alignTop="@id/avg_mse"
+                    android:textSize="16sp"
+                    android:text="0"/>
+
+                <TextView
+                    android:id="@+id/avg_sad"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="16dp"
+                    android:layout_below="@id/avg_mse"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:text="AVG SAD"/>
+                <TextView
+                    android:id="@+id/avg_sad_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/avg_sad"
+                    android:layout_alignTop="@id/avg_sad"
+                    android:textSize="16sp"
+                    android:text="0"/>
+
+                <TextView
+                    android:id="@+id/progress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:textSize="16sp"
+                    android:visibility="gone"
+                    android:text="0%"/>
+            </RelativeLayout>
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:layout_collapseMode="pin"
+                app:popupTheme="@style/AppTheme.PopupOverlay" />
+
+        </android.support.design.widget.CollapsingToolbarLayout>
+    </android.support.design.widget.AppBarLayout>
+
+    <include layout="@layout/content_matting_evaluation" />
+
+</android.support.design.widget.CoordinatorLayout>

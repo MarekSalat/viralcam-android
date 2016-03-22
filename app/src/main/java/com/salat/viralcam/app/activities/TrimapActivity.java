@@ -209,15 +209,7 @@ public class TrimapActivity extends AppCompatActivity {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    // drawTrimapView contains clear matrix with current scale and translation
-                                    Matrix drawTrimapViewMatrix = drawTrimapView.getImageMatrix();
-                                    setImageViewBitmapWithMatrix(drawTrimapViewMatrix, imageView, background);
-
-                                    drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DONE);
-                                    drawTrimapView.setVisibility(View.INVISIBLE);
-//                                    buttonShare.setVisibility(View.VISIBLE);
-
-                                    processDialog.hide();
+                                    prepareShowResultUI();
                                 }
                             });
                             return;
@@ -225,7 +217,6 @@ public class TrimapActivity extends AppCompatActivity {
 
                         // create bitmaps for image, trimap and final alpha
                         final Rect foregroundRect = new Rect(0, 0, foregroundBoundingBox.width(), foregroundBoundingBox.height());
-
 
                         final Bitmap image = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ARGB_8888);
                         final Bitmap trimap = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ARGB_8888);
@@ -642,8 +633,8 @@ public class TrimapActivity extends AppCompatActivity {
                 .build());
     }
 
-    public native void calculateAlphaMask(Bitmap image, Bitmap trimap, Bitmap outAlpha);
-    public native void findBoundingBox(Bitmap trimap, Rect rect);
+    public static native void calculateAlphaMask(Bitmap image, Bitmap trimap, Bitmap outAlpha);
+    public static native void findBoundingBox(Bitmap trimap, Rect rect);
 
     static {
         System.loadLibrary("nativeAlphaMatte");
