@@ -329,8 +329,8 @@ static void calculateAlphaPatchMatch(Bitmap &image,
 
                     if (cost < sample.cost)
                     {
-                        sample.foreground_index = sample_foreground_index;
-                        sample.background_index = sample_background_index;
+                        sample.foreground_index = foreground_index;
+                        sample.background_index = background_index;
                         sample.cost = cost;
                         sample.alpha = alpha;
                     }

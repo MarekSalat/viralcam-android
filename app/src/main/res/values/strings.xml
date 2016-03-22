@@ -61,5 +61,6 @@
     <string name="select_button_button_description">select image</string>
     <string name="title_activity_ripple_test">RippleTest</string>
     <string name="title_activity_matting_evaluation">Matting Evaluation</string>
+    <string name="title_activity_compute_shader">Compute shader</string>
 
 </resources>
