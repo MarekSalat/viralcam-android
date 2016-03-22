@@ -196,38 +196,42 @@ public class CaptureSceneActivity extends AppCompatActivity {
         if(!mUseRear)
             swapCameraImageView.setImageResource(R.drawable.ic_camera_rear_white_48dp);
 
-        swapCamera.setOnClickListener(new View.OnClickListener() {
+        if(Constants.USE_ONLY_LEGACY_CAMERA_API || Build.VERSION.SDK_INT <  Build.VERSION_CODES.LOLLIPOP){
+            swapCamera.setVisibility(View.GONE);
+        } else {
+            swapCamera.setOnClickListener(new View.OnClickListener() {
 
-            @Override
-            public void onClick(View v) {
-                mUseRear = !mUseRear;
+                @Override
+                public void onClick(View v) {
+                    mUseRear = !mUseRear;
 
-                logSwapCameraAction();
+                    logSwapCameraAction();
 
-                if(mUseRear){
-                    swapCamera.animate().scaleX(0).setDuration(125).withEndAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            swapCameraImageView.setImageResource(R.drawable.ic_camera_front_white_48dp);
-                            swapCamera.animate().scaleX(1).start();
-                        }
-                    }).start();
-                    invertImageView(imageView, 1);
+                    if(mUseRear){
+                        swapCamera.animate().scaleX(0).setDuration(125).withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                swapCameraImageView.setImageResource(R.drawable.ic_camera_front_white_48dp);
+                                swapCamera.animate().scaleX(1).start();
+                            }
+                        }).start();
+                        invertImageView(imageView, 1);
+                    }
+                    else{
+                        swapCamera.animate().scaleX(0).setDuration(125).withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                swapCameraImageView.setImageResource(R.drawable.ic_camera_rear_white_48dp);
+                                swapCamera.animate().scaleX(1).start();
+                            }
+                        }).start();
+                        invertImageView(imageView, -1);
+                    }
+
+                    createAndReplaceCameraFragment(mUseRear);
                 }
-                else{
-                    swapCamera.animate().scaleX(0).setDuration(125).withEndAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            swapCameraImageView.setImageResource(R.drawable.ic_camera_rear_white_48dp);
-                            swapCamera.animate().scaleX(1).start();
-                        }
-                    }).start();
-                    invertImageView(imageView, -1);
-                }
-
-                createAndReplaceCameraFragment(mUseRear);
-            }
-        });
+            });
+        }
 
         dialog = builder.create();
     }
