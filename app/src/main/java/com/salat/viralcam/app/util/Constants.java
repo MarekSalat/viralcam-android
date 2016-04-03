@@ -5,7 +5,6 @@ import android.content.res.Resources;
 import android.net.Uri;
 
 import com.salat.viralcam.app.BuildConfig;
-import com.salat.viralcam.app.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -13,16 +12,15 @@ import java.util.Locale;
 public class Constants {
     public static final String PACKAGE_NAME = "com.salat.viralcam.app";
 
-    public static enum Flavor {
+    public enum Flavor {
         Production,
-        AlphaBeta,
+        Alpha,
     }
-    public static enum BuildType {
+    public enum BuildType {
         Release,
         Debug,
     }
-    public static final Flavor FLAVOR = BuildConfig.VERSION_NAME.contains("alpha") ||
-            BuildConfig.VERSION_NAME.contains("beta") ? Flavor.AlphaBeta : Flavor.Production;
+    public static final Flavor FLAVOR = BuildConfig.VERSION_NAME.contains("alpha") ? Flavor.Alpha : Flavor.Production;
 
     public static BuildType BUILD_TYPE = BuildConfig.BUILD_TYPE.contains("debug") ?
             BuildType.Debug : BuildType.Release;

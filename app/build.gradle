@@ -22,8 +22,8 @@ model {
     android.buildTypes {
         release {
             minifyEnabled = true
-            proguardFiles += file('proguard-rules.pro')
             multiDexEnabled = true
+            proguardFiles += file('proguard-rules.pro')
 
             ndk.with {
                 debuggable = false
@@ -49,9 +49,10 @@ model {
     }
 
     android.productFlavors {
+        create("production")
+
         create("alpha") {
             versionName = projectVersionName + "-alpha"
-            applicationId = projectApplicationID
         }
 
 //        create("arm7") {
@@ -63,10 +64,10 @@ model {
 //        create("x86-32") {
 //            ndk.abiFilters += "x86"
 //        }
-        // for detailed abiFilter descriptions, refer to "Supported ABIs" @
-        // https://developer.android.com/ndk/guides/abis.html#sa
-
-        // build one including all cpu architectures
+//        // for detailed abiFilter descriptions, refer to "Supported ABIs" @
+//        // https://developer.android.com/ndk/guides/abis.html#sa
+//
+//        // build one including all cpu architectures
 //        create("all")
     }
 }
