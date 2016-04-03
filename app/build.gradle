@@ -49,7 +49,9 @@ model {
     }
 
     android.productFlavors {
-        create("production")
+        create("production"){
+            versionCode = 1000 + projectVersionCode
+        }
 
         create("alpha") {
             versionName = projectVersionName + "-alpha"
