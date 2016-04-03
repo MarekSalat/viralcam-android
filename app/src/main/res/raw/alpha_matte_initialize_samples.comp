@@ -39,7 +39,7 @@ float nearestDistance(bool use_foreground, ivec2 point) {
     // FLT_MAX      = 3.402823e+38
     float minDistSqr = 3.402823e+38;
     for (uint i = uint(0); i < boundary_size; ++i) {
-        vec2 delta = vec2((use_foreground ? foregroundBoundary.data[i] : foregroundBoundary.data[i]) - point);
+        vec2 delta = vec2((use_foreground ? foregroundBoundary.data[i] : backgroundBoundary.data[i]) - point);
         float dist_to_boundary = pow(delta.x, 2.0) + pow(delta.y, 2.0);
         minDistSqr = min(minDistSqr, dist_to_boundary);
     }
@@ -70,8 +70,8 @@ void main(){
         0.0, 0.0,
         3.402823e+38, 0.0);
 
-    _sample.distance2background = nearestDistance(true, ivec2(x, y));
-    _sample.distance2foreground = nearestDistance(false, ivec2(x, y));
+    _sample.distance2background = nearestDistance(false, ivec2(x, y));
+    _sample.distance2foreground = nearestDistance(true, ivec2(x, y));
 
     samples.data[y*dimensions.x + x] = _sample;
 }

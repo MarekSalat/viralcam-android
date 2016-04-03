@@ -50,14 +50,12 @@ void main(){
         uint prev_values = atomicCounterIncrement(atomic_counter_foreground);
         if(prev_values < boundary_size){
             foregroundBoundary.data[prev_values] = coord;
-//            alpha.data[coord.y*dimensions.x + coord.x] = 0xFFFFFFFF;
         }
     }
     else if(trimap_pixel == TRIMAP_BACKGROUND) {
         uint prev_values = atomicCounterIncrement(atomic_counter_background);
         if(prev_values < boundary_size){
             backgroundBoundary.data[prev_values] = coord;
-//            alpha.data[coord.y*dimensions.x + coord.x] = 0xFFFFFFFF;
         }
     }
 }

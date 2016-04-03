@@ -25,7 +25,7 @@ public class MattingHelper {
 
         for (int x = 0; x < image.getWidth(); x++) {
             for (int y = 0; y < image.getHeight(); y++) {
-                int value = Color.green(image.getPixel(x, y));
+                int value = /*0xFF -*/ Color.green(image.getPixel(x, y));
                 alpha.setPixel(x, y, Color.argb(value, value, value, value));
             }
         }
@@ -52,8 +52,12 @@ public class MattingHelper {
     }
 
     public static Bitmap read(String imagePath, Bitmap.Config inPreferredConfig){
+       return read(imagePath, inPreferredConfig, 1);
+    }
+
+    public static Bitmap read(String imagePath, Bitmap.Config inPreferredConfig, int scale){
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize = 2;
+        options.inSampleSize = scale;
         options.inPreferredConfig = inPreferredConfig;
 
         return BitmapFactory.decodeFile(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + imagePath, options);

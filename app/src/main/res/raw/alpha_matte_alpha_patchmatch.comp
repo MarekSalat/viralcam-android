@@ -99,7 +99,7 @@ void main(){
     if(trimap_pixel == TRIMAP_UNKNOWN) {
         ivec2 current_point = ivec2(x, y);
 
-        uvec4 image_color = uvec4(texture(trimap, tex_coord) * 255.0);
+        uvec4 image_color = uvec4(texture(image, tex_coord) * 255.0);
         // propagation
         for (int y2 = y - 1; y2 <= y + 1; ++y2) {
             for (int x2 = x - 1; x2 <= x + 1; ++x2) {
@@ -110,7 +110,7 @@ void main(){
                     float(x2) / float(dimensions.x),
                     float(y2) / float(dimensions.y)
                 );
-                uvec4 current_trimap_pixel = uvec4(texture(trimap, tex_coord) * 255.0);
+                uvec4 current_trimap_pixel = uvec4(texture(trimap, current_tex_coord) * 255.0);
                 if(current_trimap_pixel != TRIMAP_UNKNOWN)
                     continue;
 
@@ -125,12 +125,12 @@ void main(){
                     float(foreground_point.x) / float(dimensions.x),
                     float(foreground_point.y) / float(dimensions.y)
                 );
-                vec2 tex_coord_backgroun = vec2(
+                vec2 tex_coord_background = vec2(
                     float(background_point.x) / float(dimensions.x),
                     float(background_point.y) / float(dimensions.y)
                 );
                 uvec4 foreground_color = uvec4(texture(image, tex_coord_foreground) * 255.0);
-                uvec4 background_color = uvec4(texture(image, tex_coord_backgroun) * 255.0);
+                uvec4 background_color = uvec4(texture(image, tex_coord_background) * 255.0);
 
                 float alpha = calculateAlpha(foreground_color, background_color, image_color);
 
@@ -151,15 +151,20 @@ void main(){
         float r;
         // random walk
         for (int k = 0; (r = float(max_boundary_width) * pow(0.5, float(k))) > 1.0; k++) {
-            int distance = int(r * (rand(vec2(gl_GlobalInvocationID) * 29.0)));
+            int distance = int(2.0*r * (rand(vec2(gl_GlobalInvocationID) * 29.0)) - r);
 
             int foreground_index = _sample.foreground_index + distance;
             int background_index = _sample.background_index + distance;
 
-            foreground_index = foreground_index >= max_boundary_width ?
-                               foreground_index - max_boundary_width : foreground_index;
-            background_index = background_index >= max_boundary_width ?
-                               background_index - max_boundary_width : background_index;
+            if(foreground_index < 0)
+                foreground_index = max_boundary_width + foreground_index;
+            if(foreground_index >= max_boundary_width)
+                foreground_index = foreground_index - max_boundary_width;
+
+            if(background_index < 0)
+                background_index = max_boundary_width + background_index;
+            if(background_index >= max_boundary_width)
+                background_index = background_index - max_boundary_width;
 
             ivec2 foreground_point = foregroundBoundary.data[foreground_index];
             ivec2 background_point = backgroundBoundary.data[background_index];
@@ -190,6 +195,6 @@ void main(){
         }
     }
 
-    // barrier(); // ???
+//     barrier(); // ???
     samples.data[y * dimensions.x + x] = _sample;
 }

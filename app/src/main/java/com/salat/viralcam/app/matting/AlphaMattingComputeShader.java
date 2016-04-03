@@ -30,6 +30,7 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * Created by Marek on 08.02.2016.
  */
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsValidation, ShaderHelper.OnShaderError {
     private static final int IMAGE_BINDING = 0;
     private static final int TRIMAP_BINDING = 1;
@@ -40,10 +41,10 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
     private static final int ATOMIC_BUFFER_BINDING = 3;
     private static final int SAMPLE_BUFFER_BINDING = 4;
 
-    private static final int BOUNDARY_SIZE = 1000;
+    private static final int BOUNDARY_SIZE = 16000;
     private static final int BOUNDARY_BUFFER_CAPACITY = 2 * BOUNDARY_SIZE; // (x, y)
     private static final int WORKGROUP_SIZE = 32;
-    public static final int ALPHA_PATCHMATCH_ITERATIONS = 10;
+    public static final int ALPHA_PATCHMATCH_ITERATIONS = 8;
 
     static class SandboxVars {
         public int program;
@@ -183,7 +184,6 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
     }
 
     int tempIntBuffer[] = new int[1000 * 1000];
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void compute(ComputeShaderArgs _args) {
         Args args = (Args) _args;
@@ -288,7 +288,6 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
 
             dispatchComputeAndWait(width, height);
         }
-//        logAtomicCounters();
 
         // use program extendBoundary
         GLES31.glUseProgram(extendBoundary.program);
@@ -304,12 +303,20 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
         
         // TODO: 16.02.2016 sort boundary pixels by luminescence
 
+        GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, ATOMIC_BUFFER_BINDING, atomicCounterBuffer);
+        IntBuffer atomicCountersResult = ((ByteBuffer) GLES31.glMapBufferRange(
+                GLES31.GL_ATOMIC_COUNTER_BUFFER, 0, atomicCounters.capacity() * Size.ofInt(), GLES31.GL_MAP_READ_BIT))
+                .order(ByteOrder.nativeOrder())
+                .asIntBuffer();
+
+        final int minBoundarySize = Math.min(BOUNDARY_SIZE, Math.min(atomicCountersResult.get(0), atomicCountersResult.get(1)));
+
         // use program initializeSamples
         GLES31.glUseProgram(initializeSamples.program);
         ShaderHelper.checkGlError(this, "glUseProgram"); {
             // set dimensions
             GLES31.glUniform2i(initializeSamples.dimensionsLocation, width, height);
-            GLES31.glUniform1ui(initializeSamples.boundarySizeLocation, BOUNDARY_SIZE);
+            GLES31.glUniform1ui(initializeSamples.boundarySizeLocation, minBoundarySize);
             GLES31.glUniform1i(initializeSamples.trimapLocation, TRIMAP_BINDING);
             ShaderHelper.checkGlError(this, "glUniform1i");
 
@@ -321,12 +328,12 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
         ShaderHelper.checkGlError(this, "glUseProgram"); {
             // set dimensions
             GLES31.glUniform2i(alphaPatchMatch.dimensionsLocation, width, height);
-            GLES31.glUniform1ui(alphaPatchMatch.boundarySizeLocation, BOUNDARY_SIZE);
+            GLES31.glUniform1ui(alphaPatchMatch.boundarySizeLocation, minBoundarySize);
             GLES31.glUniform1i(alphaPatchMatch.trimapLocation, TRIMAP_BINDING);
             GLES31.glUniform1i(alphaPatchMatch.imageLocation, IMAGE_BINDING);
             ShaderHelper.checkGlError(this, "glUniform1i");
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < ALPHA_PATCHMATCH_ITERATIONS; i++) {
                 dispatchComputeAndWait(width, height);
             }
         }
@@ -353,18 +360,6 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
         args.getResultCallback().success(this, args);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void logAtomicCounters() {
-        // read atomic counters
-        GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, ATOMIC_BUFFER_BINDING, atomicCounterBuffer);
-        IntBuffer atomicCountersResult = ((ByteBuffer) GLES31.glMapBufferRange(
-                GLES31.GL_ATOMIC_COUNTER_BUFFER, 0, atomicCounters.capacity() * Size.ofInt(), GLES31.GL_MAP_READ_BIT))
-                .order(ByteOrder.nativeOrder())
-                .asIntBuffer();
-        Log.e("foo", String.format("counters %d, %d", atomicCountersResult.get(0), atomicCountersResult.get(1)));
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setShaderResult(Args args, int width, int height, int alphaPixels) {
         // read alpha values
         GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, ALPHA_BUFFER_BINDING, alphaBuffer);
@@ -395,7 +390,6 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
         Log.e("foo", String.format("alpha copying %d [ms]", end - start));
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void dispatchComputeAndWait(int width, int height) {
         // run forest run
         GLES31.glDispatchCompute(
@@ -407,7 +401,6 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
         GLES31.glMemoryBarrier(GLES31.GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private static void  bindTexture(Bitmap image, int texture, int index) {
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0 + index);
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, texture);

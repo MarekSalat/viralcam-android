@@ -8,12 +8,15 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.computeshader.ComputeShader;
@@ -27,8 +30,13 @@ import com.salat.viralcam.app.util.MattingHelper;
 public class ComputeShaderActivity extends AppCompatActivity implements ComputeShaderFragment.OnFragmentEvents {
     private static final String TAG = "ComputeShaderActivity";
     private static final String FRAGMENT = "COMPUTE_SHADER_FRAGMENT";
-//    public static final int WIDTH = 800;
-//    private static final int HEIGHT = 600;
+    public static final int WIDTH = 800;
+    private static final int HEIGHT = 600;
+    private Spinner imageSpinner;
+    private ArrayAdapter<String> imageAdapter;
+    private ArrayAdapter<String> imageScaleAdapter;
+    private Spinner imageScaleSpinner;
+    private FloatingActionButton fab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,33 +46,64 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        String[] arrayImageSpinner = new String[27];
+        for (int i = 0; i < 27; i++) {
+            arrayImageSpinner[i] = String.format("GT%02d", i+1);
+        }
+        imageSpinner = (Spinner) findViewById(R.id.image_id_spinner);
+        imageAdapter = new ArrayAdapter<>(this,
+                R.layout.spinner_item, arrayImageSpinner);
+        imageSpinner.setAdapter(imageAdapter);
+
+
+        String[] arrayScaleSpinner = new String[5];
+        for (int i = 0; i < 5; i++ ) {
+            arrayScaleSpinner[i] = String.format("%dx", (int) Math.pow(2, i));
+        }
+        imageScaleSpinner = (Spinner) findViewById(R.id.image_scale_spinner);
+        imageScaleAdapter = new ArrayAdapter<>(this,
+                R.layout.spinner_item, arrayScaleSpinner);
+        imageScaleSpinner.setAdapter(imageScaleAdapter);
+
+        fab = (FloatingActionButton) findViewById(R.id.fab);
         assert fab != null;
         fab.setOnClickListener(new View.OnClickListener() {
 
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Run forest run" , Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+//                Snackbar.make(view, "Run forest run" , Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
 
                 FragmentManager fm = getFragmentManager();
                 Fragment fragment = fm.findFragmentByTag(FRAGMENT);
 
-                if(fragment == null){
+                if (fragment == null) {
                     fragment = ComputeShaderFragment.newInstance();
 
                     fragment.setRetainInstance(false);
                     getFragmentManager().beginTransaction()
                             .replace(R.id.container, fragment, FRAGMENT)
                             .commit();
-                }
-                else {
+                } else {
                     onComputeShaderFragmentStart((ComputeShaderFragment) fragment);
                 }
             }
         });
-        fab.performClick();
+//        fab.performClick();
+        AdapterView.OnItemSelectedListener listener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                fab.performClick();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                fab.performClick();
+            }
+        };
+        imageSpinner.setOnItemSelectedListener(listener);
+//        imageScaleSpinner.setOnItemSelectedListener(listener);
     }
 
     @Override
@@ -74,9 +113,26 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
     }
 
     @Override
-    public void onComputeShaderFragmentStart(ComputeShaderFragment fragment) {
-//        final int SIZE = 1024 * invocationAttempt*invocationAttempt;
-//        invocationAttempt++;
+    public void onComputeShaderFragmentStart(final ComputeShaderFragment fragment) {
+        final ImageView imageView = (ImageView) findViewById(R.id.imageView2);
+        final ImageView trimapView = (ImageView) findViewById(R.id.imageView3);
+        final ImageView alphaView = (ImageView) findViewById(R.id.imageView4);
+        final ImageView trueAlphaView = (ImageView) findViewById(R.id.imageView5);
+        fab.setEnabled(false);
+
+        if (imageView == null || trimapView == null || alphaView == null || trueAlphaView == null)
+            return;
+
+        final int SCALE = imageScaleSpinner.getSelectedItemId() > 0 ? (int) Math.pow(2, imageScaleSpinner.getSelectedItemId()) : 1;
+        final int ID = imageSpinner.getSelectedItemId() > 0 ? (int) imageSpinner.getSelectedItemId() : 1;
+        final int VERSION = 1;
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                //        final int SIZE = 1024; //* invocationAttempt*invocationAttempt;
+//        //invocationAttempt++;
 //        IntBuffer input1buffer = IntBuffer.allocate(SIZE);
 //        for (int i = 0; i < SIZE; i++) {
 //            input1buffer.put(i, 1027);
@@ -104,8 +160,6 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
 //            }
 //        }));
 
-
-
 //        Bitmap image = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888);
 //        Bitmap trimap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888);
 //        Bitmap alpha = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ALPHA_8);
@@ -130,56 +184,51 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
 //
 //        canvas.setBitmap(alpha);
 //        canvas.drawColor(Color.BLACK);
-
-        final int ID = 1;
-        final int VERSION = 1;
-
-        Bitmap image = MattingHelper.read(MattingDataSet.AlphamattingComDataSet.getImagePath(ID), Bitmap.Config.ARGB_8888);
-//        Bitmap trueAlpha = MattingHelper.convertToAlpha8(
-//                MattingHelper.read(MattingDataSet.AlphamattingComDataSet.getTrueAlphaPath(ID), Bitmap.Config.ARGB_8888));
-        Bitmap alpha = Bitmap.createBitmap(image.getWidth(), image.getHeight(), Bitmap.Config.ALPHA_8);
-        Bitmap trimap = MattingHelper.changeTrimapColors(
-                MattingHelper.read(MattingDataSet.AlphamattingComDataSet.getTrimapPath(ID, VERSION), Bitmap.Config.ARGB_8888), 0xFF808080, Color.TRANSPARENT);
-
-        ImageView imageView = (ImageView) findViewById(R.id.imageView2);
-        ImageView trimapView = (ImageView) findViewById(R.id.imageView3);
-        final ImageView alphaView = (ImageView) findViewById(R.id.imageView4);
-
-        if (imageView == null || trimapView == null || alphaView == null)
-            return;
-
-        imageView.setImageBitmap(image);
-        trimapView.setImageBitmap(trimap);
-        alphaView.setImageBitmap(alpha);
-
-        final long start = System.currentTimeMillis();
-        fragment.compute(new AlphaMattingComputeShader.Args(image, trimap, alpha, new ComputeShaderResultCallback() {
-            @Override
-            public void success(ComputeShader shader, ComputeShaderArgs _args) {
-                final AlphaMattingComputeShader.Args args = (AlphaMattingComputeShader.Args) _args;
-                long end = System.currentTimeMillis();
-
-                Log.e(TAG, String.format("%d [ms] - %s - [%x, %x, %x, %x, %x, %x]", end - start, args.alpha.toString(),
-                        args.alpha.getPixel(0, 0),
-                        args.alpha.getPixel(1, 1),
-                        args.alpha.getPixel(2, 2),
-                        args.alpha.getPixel(3, 3),
-                        args.alpha.getPixel(4, 4),
-                        args.alpha.getPixel(5, 5)
-                ));
+                final Bitmap image = MattingHelper.read(
+                        MattingDataSet.AlphamattingComDataSet.getImagePath(ID), Bitmap.Config.ARGB_8888, SCALE);
+                final Bitmap trueAlpha = MattingHelper.convertToAlpha8(MattingHelper.read(
+                                MattingDataSet.AlphamattingComDataSet.getTrueAlphaPath(ID), Bitmap.Config.ARGB_8888, SCALE));
+                final Bitmap alpha = Bitmap.createBitmap(image.getWidth(), image.getHeight(), Bitmap.Config.ALPHA_8);
+                final Bitmap trimap = MattingHelper.changeTrimapColors(
+                        MattingHelper.read(MattingDataSet.AlphamattingComDataSet.getTrimapPath(ID, VERSION), Bitmap.Config.ARGB_8888, SCALE), 0xFF808080, Color.TRANSPARENT);
 
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        alphaView.setImageBitmap(args.alpha);
+                        imageView.setImageBitmap(image);
+                        trimapView.setImageBitmap(trimap);
+                        alphaView.setImageBitmap(alpha);
+                        trueAlphaView.setImageBitmap(trueAlpha);
                     }
                 });
-            }
 
-            @Override
-            public void error(ComputeShader shader, ComputeShaderArgs args, Exception exception) {
+                final long start = System.currentTimeMillis();
+                fragment.compute(new AlphaMattingComputeShader.Args(image, trimap, alpha, new ComputeShaderResultCallback() {
+                    @Override
+                    public void success(ComputeShader shader, ComputeShaderArgs _args) {
+                        final AlphaMattingComputeShader.Args args = (AlphaMattingComputeShader.Args) _args;
+                        final long end = System.currentTimeMillis();
 
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                String message = String.format("Duration %d [ms]", end - start);
+                                Log.i(TAG, message);
+                                Toast.makeText(ComputeShaderActivity.this, message, Toast.LENGTH_SHORT).show();
+
+                                alphaView.setImageBitmap(args.alpha);
+                                fab.setEnabled(true);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void error(ComputeShader shader, ComputeShaderArgs args, Exception exception) {
+
+                    }
+                }));
             }
-        }));
+        });
+        thread.start();
     }
 }

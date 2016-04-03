@@ -45,12 +45,12 @@ void main(){
     // assign right value
     int value = 0x00;
     if(trimap_pixel == TRIMAP_FOREGROUND)
-        value = 0x11; // writing zero is not necessary
+        value = 0x00; // writing zero is not necessary
     else if(trimap_pixel == TRIMAP_BACKGROUND)
         value = 0xFF;
     else{
         Sample _sample = samples.data[y * dimensions.x + x];
-        value = int(_sample.alpha * 255.0);
+        value = 0xFF - int(_sample.alpha * 255.0);
     }
 
     value = max(0, min(value, 0xFF));
