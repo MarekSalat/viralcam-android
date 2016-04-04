@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -16,8 +17,10 @@ import android.support.annotation.NonNull;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
@@ -56,6 +59,8 @@ public class CaptureSceneActivity extends AppCompatActivity {
     private boolean mUseRear = true;
     private Bitmap imageViewBitmap;
     private Tracker tracker;
+    private Matrix matrix = new Matrix();
+    private ScaleGestureDetector scaleGestureDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,6 +135,7 @@ public class CaptureSceneActivity extends AppCompatActivity {
                         Intent intent = new Intent(CaptureSceneActivity.this, TrimapActivity.class);
                         intent.putExtra(TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_URI, uri.toString());
                         intent.putExtra(TrimapActivity.INTENT_EXTRA_BACKGROUND_IMAGE_URI, imageUri.toString());
+                        // passing matrix http://stackoverflow.com/a/23929106/2555805
                         startActivity(intent);
                     }
                 });
@@ -153,13 +159,21 @@ public class CaptureSceneActivity extends AppCompatActivity {
                 takePictureButton.setVisibility(View.VISIBLE);
                 int resourceId = R.raw.panda;
 
-                switch (which){
-                    case 0:  resourceId = R.raw.panda; break;
-                    case 1:  resourceId = R.raw.pizza_tower; break;
-                    case 2:  resourceId = R.raw.game_of_thrones; break;
-                    case 3:  resourceId = R.raw.star_warse; break;
+                switch (which) {
+                    case 0:
+                        resourceId = R.raw.panda;
+                        break;
+                    case 1:
+                        resourceId = R.raw.pizza_tower;
+                        break;
+                    case 2:
+                        resourceId = R.raw.game_of_thrones;
+                        break;
+                    case 3:
+                        resourceId = R.raw.star_warse;
+                        break;
 
-                    default:{
+                    default: {
                         logSelectBackground(AnalyticsTrackers.Label.CustomBackground);
 
                         Intent intent = new Intent();
@@ -180,15 +194,49 @@ public class CaptureSceneActivity extends AppCompatActivity {
         });
 
         mDetector = new GestureDetectorCompat(this, new GestureDetector.SimpleOnGestureListener(){
-            @Override
-            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-                float alpha = imageView.getAlpha();
-                alpha += distanceX / 100;
-                imageView.setAlpha(Math.max(0.2f, Math.min(0.95f, alpha)));
-                return true;
-            }
+//            @Override
+//            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+//                float alpha = imageView.getAlpha();
+//                alpha += distanceX / 100;
+//                imageView.setAlpha(Math.max(0.2f, Math.min(0.95f, alpha)));
+//                return true;
+//            }
+                public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                    matrix.postTranslate(-(isImageInverterd(imageView) ? -1f : 1f) * distanceX, -distanceY);
+                    imageView.setMatrix(matrix);
+                    imageView.invalidate();
+                    return true;
+                }
         });
 
+        scaleGestureDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.OnScaleGestureListener() {
+            float currentScale = 1;
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                currentScale = Math.max(1f, Math.min(5f, currentScale));
+                currentScale *= detector.getScaleFactor();
+
+                if(currentScale < 1f || currentScale > 5f)
+                    return false;
+
+                matrix.postScale(detector.getScaleFactor(), detector.getScaleFactor(),
+                        detector.getFocusX(), detector.getFocusY());
+                imageView.setMatrix(matrix);
+                imageView.invalidate();
+
+                return true;
+            }
+
+            @Override
+            public boolean onScaleBegin(ScaleGestureDetector detector) {
+                return true;
+            }
+
+            @Override
+            public void onScaleEnd(ScaleGestureDetector detector) {
+
+            }
+        });
 
         final View swapCamera = findViewById(R.id.swap_camera);
         final ImageView swapCameraImageView = (ImageView) findViewById(R.id.swap_camera_image);
@@ -310,6 +358,7 @@ public class CaptureSceneActivity extends AppCompatActivity {
     @Override
     public boolean onTouchEvent(MotionEvent event){
         this.mDetector.onTouchEvent(event);
+        this.scaleGestureDetector.onTouchEvent(event);
         // Be sure to call the superclass implementation
         return super.onTouchEvent(event);
     }
@@ -397,6 +446,8 @@ public class CaptureSceneActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         imageView.setImage(imageViewBitmap);
+                        matrix = new Matrix();
+                        imageView.setMatrix(null);
                         imageView.invalidate();
                     }
                 });
@@ -411,6 +462,10 @@ public class CaptureSceneActivity extends AppCompatActivity {
     private void invertImageView(ImageWithMask imageView, int scaleX) {
         imageView.setScale(scaleX);
         imageView.invalidate();
+    }
+
+    private boolean isImageInverterd(ImageWithMask imageView){
+        return imageView.getScale() < 0;
     }
 
     private boolean isImageSelected(){

@@ -50,7 +50,11 @@
         <activity
             android:name=".activities.CaptureSceneActivity"
             android:label="@string/title_activity_capture_scene"
-            android:theme="@style/AppTheme.FullScreen" />
+            android:theme="@style/AppTheme.FullScreen" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".activities.IntroductionActivity"
             android:label="@string/title_activity_introduction"

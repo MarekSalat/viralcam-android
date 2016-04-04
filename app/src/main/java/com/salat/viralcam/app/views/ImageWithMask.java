@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
@@ -30,6 +31,7 @@ public class ImageWithMask extends View {
     private Paint mImagePaint;
     private Rect mBitmapRect;
     private int scaleX = 1;
+    private Matrix matrix;
 
 
     public ImageWithMask(Context c) {
@@ -119,6 +121,8 @@ public class ImageWithMask extends View {
 
         canvas.save();
         canvas.scale(scaleX, 1, mBitmapRect.width() / 2, 0);
+        if(matrix != null)
+            canvas.concat(matrix);
         canvas.drawBitmap(mImage, null, mBitmapRect, mImagePaint);
         canvas.drawBitmap(mMask, null, mBitmapRect, mMaskPaint);
         canvas.restore();
@@ -126,5 +130,13 @@ public class ImageWithMask extends View {
 
     public void setScale(int scaleX) {
         this.scaleX = scaleX;
+    }
+
+    public int getScale() {
+        return scaleX;
+    }
+
+    public void setMatrix(Matrix matrix) {
+        this.matrix = matrix;
     }
 }
