@@ -39,7 +39,6 @@
             app:popupTheme="@style/AppTheme.PopupOverlay" />
     </android.support.design.widget.AppBarLayout>
 
-
     <LinearLayout
         android:id="@+id/brush_group"
         android:layout_width="match_parent"
@@ -53,68 +52,99 @@
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="2" />
+            android:layout_weight="1" />
 
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/button_brush_magic"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:orientation="vertical"
+            android:gravity="center"
             android:layout_weight="1">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:paddingBottom="8dp"
+                android:text="Auto"/>
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_image_layer_star"/>
-        </FrameLayout>
+        </LinearLayout>
 
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/button_brush_clear"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:orientation="vertical"
+            android:gravity="center"
             android:layout_weight="1">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:paddingBottom="8dp"
+                android:text="Clear"/>
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:layout_gravity="center"
                 android:src="@drawable/ic_filter_none_white_48dp"/>
-        </FrameLayout>
+        </LinearLayout>
 
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/button_brush_background"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:orientation="vertical"
+            android:gravity="center"
             android:layout_weight="1">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:paddingBottom="8dp"
+                android:text="Back"/>
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_flip_to_back_white_48dp"/>
-        </FrameLayout>
+        </LinearLayout>
 
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/button_brush_foreground"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:orientation="vertical"
+            android:gravity="center"
             android:layout_weight="1">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:paddingBottom="8dp"
+                android:text="Front"/>
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_flip_to_front_white_48dp"/>
-        </FrameLayout>
+        </LinearLayout>
 
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="2" />
+            android:layout_weight="1" />
     </LinearLayout>
 
     <RelativeLayout
@@ -132,6 +162,7 @@
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
             android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
             android:visibility="gone">
             <ImageView
                 android:layout_width="24dp"
@@ -146,7 +177,8 @@
             android:layout_height="wrap_content"
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:layout_alignParentEnd="true">
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true">
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
@@ -161,6 +193,7 @@
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
             android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
             android:visibility="gone" >
             <ImageView
                 android:layout_width="24dp"
@@ -169,4 +202,26 @@
                 android:src="@drawable/ic_done_white_48dp"/>
         </FrameLayout>
     </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical">
+
+        <android.support.v7.widget.AppCompatSeekBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/light_seekbar"
+            android:max="100"
+            android:progress="50" />
+
+        <android.support.v7.widget.AppCompatSeekBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/light_seekbar"
+            android:id="@+id/color_seekbar"
+            android:max="100"
+            android:progress="50"  />
+    </RelativeLayout>
+
 </android.support.design.widget.CoordinatorLayout>

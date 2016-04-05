@@ -1,4 +1,4 @@
-package com.salat.viralcam.app.activities;
+package com.salat.viralcam.app.fragments;
 
 import android.graphics.Bitmap;
 import android.net.Uri;
