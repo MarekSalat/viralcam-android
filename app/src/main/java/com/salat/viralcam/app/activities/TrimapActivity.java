@@ -53,6 +53,16 @@ import java.util.Locale;
 public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
     private static final String TAG = "TrimapActivity";
 
+    enum State {
+        INIT_TRIMAP,
+        RESULT,
+        EDIT_TRIMAP,
+        EDIT_LIGHT,
+        EDIT_COLOR,
+    }
+
+    private State state = State.INIT_TRIMAP;
+
     public static final float MIN_SCALE_FACTOR = 1f;
     public static final float MAX_SCALE_FACTOR = 5f;
 
@@ -73,7 +83,7 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
     private Snackbar markEdgeSnackbar;
     private DrawTrimapView drawTrimapView;
     private View buttonDone;
-    private View buttonEdit;
+    private View buttonEditTrimap;
     private View brushGroup;
     private View editDoneGroup;
     private Bitmap lastImageResult;
@@ -82,6 +92,8 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
     private Rect foregroundBoundingBox;
     private AppCompatSeekBar lightSeekBar;
     private AppCompatSeekBar colorSeekBar;
+    private View buttonClose;
+    private View editOptionGroup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,9 +143,6 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         buttonDone = findViewById(R.id.button_done);
         buttonDone.setVisibility(View.GONE);
 
-        buttonEdit = findViewById(R.id.button_edit);
-        buttonEdit.setVisibility(View.GONE);
-
         brushGroup = findViewById(R.id.brush_group);
         brushGroup.setVisibility(View.GONE);
 
@@ -159,8 +168,9 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
             @Override
             public void onDrawStart(DrawTrimapView view) {
                 markEdgeSnackbar.dismiss();
-                toolbar.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_top));
-                if (!canShowButtons)
+                if (state == State.INIT_TRIMAP)
+                    toolbar.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_top));
+                if (!canShowButtons || state != State.EDIT_TRIMAP)
                     return;
                 brushGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_bottom));
                 editDoneGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_bottom));
@@ -168,8 +178,9 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
 
             @Override
             public void onDrawEnd(DrawTrimapView view) {
-                toolbar.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_top));
-                if (!canShowButtons)
+                if (state == State.INIT_TRIMAP)
+                    toolbar.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_top));
+                if (!canShowButtons || state != State.EDIT_TRIMAP)
                     return;
                 brushGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
                 editDoneGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
@@ -189,94 +200,103 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         buttonDone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                processDialog.show();
+                if (state == State.EDIT_TRIMAP || state == State.INIT_TRIMAP) {
+                    processDialog.show();
+                    final long timeBeforeCalculation = System.currentTimeMillis();
 
-                final long timeBeforeCalculation = System.currentTimeMillis();
+                    Thread task = new Thread() {
+                        Paint bitmapPaint = new Paint(Paint.DITHER_FLAG);
+                        final int orientation = getResources().getConfiguration().orientation;
 
-                Thread task = new Thread() {
-                    Paint bitmapPaint = new Paint(Paint.DITHER_FLAG);
-                    final int orientation = getResources().getConfiguration().orientation;
+                        @Override
+                        public void run() {
+                            final Bitmap drawnTrimapBitmap = drawTrimapView.getTrimapBitmap();
+                            final float scale = orientation == Configuration.ORIENTATION_LANDSCAPE ?
+                                    foreground.getHeight() / (float) drawnTrimapBitmap.getHeight() :
+                                    foreground.getWidth() / (float) drawnTrimapBitmap.getWidth();
 
-                    @Override
-                    public void run() {
-                        final Bitmap drawnTrimapBitmap = drawTrimapView.getTrimapBitmap();
-                        final float scale = orientation == Configuration.ORIENTATION_LANDSCAPE ?
-                                foreground.getHeight() / (float) drawnTrimapBitmap.getHeight() :
-                                foreground.getWidth() / (float) drawnTrimapBitmap.getWidth();
+                            // for better performance we use just smallest part of the image as possible.
+                            final Rect drawnTrimapBoundingBox = new Rect();
+                            findBoundingBox(drawnTrimapBitmap, drawnTrimapBoundingBox);
+                            RectHelper.addPadding(drawnTrimapBoundingBox, BOUNDINGBOX_PADDING, foreground.getWidth(), foreground.getHeight());
+                            foregroundBoundingBox = RectHelper.scale(drawnTrimapBoundingBox, scale);
 
-                        // for better performance we use just smallest part of the image as possible.
-                        final Rect drawnTrimapBoundingBox = new Rect();
-                        findBoundingBox(drawnTrimapBitmap, drawnTrimapBoundingBox);
-                        RectHelper.addPadding(drawnTrimapBoundingBox, BOUNDINGBOX_PADDING, foreground.getWidth(), foreground.getHeight());
-                        foregroundBoundingBox = RectHelper.scale(drawnTrimapBoundingBox, scale);
+                            if (foregroundBoundingBox.isEmpty() ||
+                                    foregroundBoundingBox.width() <= 0 ||
+                                    foregroundBoundingBox.height() <= 0 ||
+                                    (foregroundBoundingBox.width() < 32 && foregroundBoundingBox.height() < 32)) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // drawTrimapView contains clear matrix with current scale and translation
+                                        Matrix drawTrimapViewMatrix = drawTrimapView.getImageMatrix();
+                                        setImageViewBitmapWithMatrix(drawTrimapViewMatrix, imageView, background);
 
-                        if (foregroundBoundingBox.isEmpty() ||
-                                foregroundBoundingBox.width() <= 0 ||
-                                foregroundBoundingBox.height() <= 0 ||
-                                (foregroundBoundingBox.width() < 32 && foregroundBoundingBox.height() < 32)) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    // drawTrimapView contains clear matrix with current scale and translation
-                                    Matrix drawTrimapViewMatrix = drawTrimapView.getImageMatrix();
-                                    setImageViewBitmapWithMatrix(drawTrimapViewMatrix, imageView, background);
+                                        drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DONE);
+                                        drawTrimapView.setVisibility(View.INVISIBLE);
+                                        //                                    buttonShare.setVisibility(View.VISIBLE);
 
-                                    drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DONE);
-                                    drawTrimapView.setVisibility(View.INVISIBLE);
-//                                    buttonShare.setVisibility(View.VISIBLE);
+                                        processDialog.hide();
+                                    }
+                                });
+                                return;
+                            }
 
-                                    processDialog.hide();
-                                }
-                            });
-                            return;
+                            // create bitmaps for image, trimap and final alpha
+                            final Rect foregroundRect = new Rect(0, 0, foregroundBoundingBox.width(), foregroundBoundingBox.height());
+                            final Bitmap image = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ARGB_8888);
+                            final Bitmap trimap = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ARGB_8888);
+                            final Bitmap alpha = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ALPHA_8);
+
+                            // fill image bitmap
+                            Canvas imageCanvas = new Canvas(image);
+                            imageCanvas.drawBitmap(foreground, foregroundBoundingBox, foregroundRect, bitmapPaint);
+
+                            // fill trimap bitmap
+                            Canvas trimapCanvas = new Canvas(trimap);
+                            trimapCanvas.drawBitmap(drawnTrimapBitmap, drawnTrimapBoundingBox, foregroundRect, bitmapPaint);
+
+                            // calculate alpha mask
+                            calculateAlphaMask(image, trimap, alpha);
+
+                            // Update trimap
+                            Canvas drawnTrimapBitmapCanvas = new Canvas(drawnTrimapBitmap);
+                            drawnTrimapBitmapCanvas.drawBitmap(trimap, null, drawnTrimapBoundingBox, null);
+
+                            // reuse trimap
+                            if (onlyForeground != null)
+                                onlyForeground.recycle();
+
+                            onlyForeground = trimap;
+                            Canvas onlyForegroundCanvas = new Canvas(onlyForeground);
+                            Paint tempPaint = new Paint();
+                            tempPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                            onlyForegroundCanvas.drawPaint(tempPaint);
+
+                            // Draw masked foreground. Result is foreground with transparent border.
+                            onlyForegroundCanvas.drawBitmap(alpha, 0, 0, null);
+                            tempPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+                            onlyForegroundCanvas.drawBitmap(image, 0, 0, tempPaint);
+
+                            // free some memory. It is not needed any more
+                            image.recycle();
+                            alpha.recycle();
+                            drawForegroundOverBackground(tempPaint, null);
+                            logImageProcessingDuration(System.currentTimeMillis() - timeBeforeCalculation);
                         }
 
-                        // create bitmaps for image, trimap and final alpha
-                        final Rect foregroundRect = new Rect(0, 0, foregroundBoundingBox.width(), foregroundBoundingBox.height());
-                        final Bitmap image = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ARGB_8888);
-                        final Bitmap trimap = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ARGB_8888);
-                        final Bitmap alpha = Bitmap.createBitmap(foregroundRect.width(), foregroundRect.height(), Bitmap.Config.ALPHA_8);
 
-                        // fill image bitmap
-                        Canvas imageCanvas = new Canvas(image);
-                        imageCanvas.drawBitmap(foreground, foregroundBoundingBox, foregroundRect, bitmapPaint);
+                    };
+                    task.start();
+                }
+                if (state == State.EDIT_COLOR || state == State.EDIT_LIGHT) {
+                    state = State.RESULT;
 
-                        // fill trimap bitmap
-                        Canvas trimapCanvas = new Canvas(trimap);
-                        trimapCanvas.drawBitmap(drawnTrimapBitmap, drawnTrimapBoundingBox, foregroundRect, bitmapPaint);
+                    editDoneGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_bottom));
+                    prepareShowResultUI();
+                }
 
-                        // calculate alpha mask
-                        calculateAlphaMask(image, trimap, alpha);
-
-                        // Update trimap
-                        Canvas drawnTrimapBitmapCanvas = new Canvas(drawnTrimapBitmap);
-                        drawnTrimapBitmapCanvas.drawBitmap(trimap, null, drawnTrimapBoundingBox, null);
-
-                        // reuse trimap
-                        if(onlyForeground != null)
-                            onlyForeground.recycle();
-
-                        onlyForeground = trimap;
-                        Canvas onlyForegroundCanvas = new Canvas(onlyForeground);
-                        Paint tempPaint = new Paint();
-                        tempPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-                        onlyForegroundCanvas.drawPaint(tempPaint);
-
-                        // Draw masked foreground. Result is foreground with transparent border.
-                        onlyForegroundCanvas.drawBitmap(alpha, 0, 0, null);
-                        tempPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-                        onlyForegroundCanvas.drawBitmap(image, 0, 0, tempPaint);
-
-                        // free some memory. It is not needed any more
-                        image.recycle();
-                        alpha.recycle();
-                        drawForegroundOverBackground(tempPaint, null);
-                        logImageProcessingDuration(System.currentTimeMillis() - timeBeforeCalculation);
-                    }
-
-
-                };
-                task.start();
+                state = State.RESULT;
             }
         });
 
@@ -308,10 +328,13 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
             }
         });
 
-        buttonEdit.setOnClickListener(new View.OnClickListener() {
+        buttonEditTrimap = findViewById(R.id.button_edit_trimap);
+        editOptionGroup = findViewById(R.id.edit_options_group);
+        buttonEditTrimap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 logEditAction();
+                state = State.EDIT_TRIMAP;
 
                 if (drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.DONE) {
                     setImageViewBitmapWithMatrix(drawTrimapView.getImageMatrix(), imageView, foreground);
@@ -320,9 +343,12 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
                     drawTrimapView.setVisibility(View.VISIBLE);
                 }
 
-                buttonEdit.setVisibility(View.GONE);
+                editOptionGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_bottom));
+
                 buttonDone.setVisibility(View.VISIBLE);
                 brushGroup.setVisibility(View.VISIBLE);
+                brushGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
+                editDoneGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
             }
         });
 
@@ -390,6 +416,22 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         colorSeekBar = (AppCompatSeekBar) findViewById(R.id.color_seekbar);
         assert colorSeekBar != null;
         colorSeekBar.setOnSeekBarChangeListener(this);
+
+        editOptionGroup.setVisibility(View.GONE);
+        editDoneGroup.setVisibility(View.GONE);
+
+        findViewById(R.id.button_edit_light).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                state = State.EDIT_LIGHT;
+                lightSeekBar.setVisibility(View.VISIBLE);
+                buttonDone.setVisibility(View.VISIBLE);
+
+                editOptionGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_bottom));
+                lightSeekBar.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
+                editDoneGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
+            }
+        });
     }
 
     // draw final image
@@ -425,6 +467,7 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
     }
 
     private void prepareShowResultUI() {
+
         if(lastImageResult != null){
             // drawTrimapView contains clear matrix with current scale and translation
             Matrix drawTrimapViewMatrix = drawTrimapView.getImageMatrix();
@@ -433,14 +476,17 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
 
         drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DONE);
         drawTrimapView.setVisibility(View.INVISIBLE);
-//      buttonShare.setVisibility(View.VISIBLE);
-
         processDialog.hide();
+
+        if(state == State.EDIT_LIGHT || state == State.EDIT_COLOR)
+            return;
 
         brushGroup.clearAnimation();
         brushGroup.setVisibility(View.GONE);
-        buttonEdit.setVisibility(View.VISIBLE);
         buttonDone.setVisibility(View.GONE);
+
+        editOptionGroup.setVisibility(View.VISIBLE);
+        editOptionGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
     }
 
     @Override
@@ -563,6 +609,14 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
                 .build());
     }
 
+    private void logShareAction() {
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(AnalyticsTrackers.Category.Action.toString())
+                .setAction(AnalyticsTrackers.Action.Share.toString())
+                .setValue(1)
+                .build());
+    }
+
     private void logShowHelpAction() {
         tracker.send(new HitBuilders.EventBuilder()
                 .setCategory(AnalyticsTrackers.Category.Action.toString())
@@ -666,13 +720,6 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    private void logShareAction() {
-        tracker.send(new HitBuilders.EventBuilder()
-                .setCategory(AnalyticsTrackers.Category.Action.toString())
-                .setAction(AnalyticsTrackers.Action.Share.toString())
-                .setValue(1)
-                .build());
-    }
 
     public native void calculateAlphaMask(Bitmap image, Bitmap trimap, Bitmap outAlpha);
     public native void findBoundingBox(Bitmap trimap, Rect rect);
