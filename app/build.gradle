@@ -1,61 +1,65 @@
 apply plugin: 'com.android.model.application'
 
 model {
-    def projectVersionCode = 104
-    def projectVersionName = "1.4"
-    def projectApplicationID = "com.salat.viralcam.app"
-
     android {
-        compileSdkVersion = 23
-        buildToolsVersion = "23.0.1"
+        def projectVersionCode = 104
+        def projectVersionName = "1.4"
+        def projectApplicationID = "com.salat.viralcam.app"
 
-        defaultConfig.with {
-            applicationId = projectApplicationID
-            minSdkVersion.apiLevel = 16
-            targetSdkVersion.apiLevel = 23
-            versionCode = projectVersionCode
-            versionName = projectVersionName
+        compileSdkVersion 23
+        buildToolsVersion "23.0.1"
+
+        defaultConfig {
+            applicationId projectApplicationID
+            minSdkVersion.apiLevel 16
+            targetSdkVersion.apiLevel 23
+            versionCode projectVersionCode
+            versionName projectVersionName
 //            testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
         }
-    }
 
-    android.buildTypes {
-        release {
-            minifyEnabled = true
-            multiDexEnabled = true
-            proguardFiles += file('proguard-rules.pro')
+        ndk {
+            moduleName "nativeAlphaMatte"
+            ldLibs.add("m")
+            ldLibs.add("log")
+            ldLibs.add("jnigraphics")
+            ldLibs.add("android")
+            cppFlags.add("-std=c++11")
+            cppFlags.add("-O3")
+            cppFlags.add("-ffast-math")
+            cppFlags.add("-fexceptions")
+            stl "gnustl_static"
+            platformVersion 16
+        }
 
-            ndk.with {
-                debuggable = false
+        buildTypes {
+            release {
+                minifyEnabled true
+                multiDexEnabled true
+                proguardFiles.add(file('proguard-rules.pro'))
+
+                ndk {
+                    debuggable false
+                }
+            }
+            debug {
+                applicationIdSuffix ".debug"
+                minifyEnabled false
+
+                ndk {
+                    debuggable true
+                }
             }
         }
-        debug {
-            applicationIdSuffix = ".debug"
-            minifyEnabled = false
-            proguardFiles = []
 
-            ndk.with {
-                debuggable = true
+        productFlavors {
+            create("production"){
+                versionCode 1000 + projectVersionCode
             }
-        }
-    }
 
-    android.ndk {
-        moduleName = "nativeAlphaMatte"
-        ldLibs += ["m", "log", "jnigraphics", "android"]
-        cppFlags += ["-std=c++11", "-O3", "-ffast-math", "-fexceptions"]
-        stl = "gnustl_static"
-        platformVersion = 16
-    }
-
-    android.productFlavors {
-        create("production"){
-            versionCode = 1000 + projectVersionCode
-        }
-
-        create("alpha") {
-            versionName = projectVersionName + "-alpha"
-        }
+            create("alpha") {
+                versionName projectVersionName + "-alpha"
+            }
 
 //        create("arm7") {
 //            ndk.abiFilters += "armeabi-v7a"
@@ -71,6 +75,7 @@ model {
 //
 //        // build one including all cpu architectures
 //        create("all")
+        }
     }
 }
 
