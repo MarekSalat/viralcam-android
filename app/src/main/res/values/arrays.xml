@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="images" >
-        <item>Panda</item>
-        <item>Pizza tower</item>
-        <item>Game of thrones throne</item>
-        <item>Star wars</item>
+        <item>Eiffel tower (portrait)</item>
+        <!--<item>Great wall of china (landscape)</item>-->
+        <item>Great wall of china (portrait)</item>
+        <item>Machu picchu (landscape)</item>
+        <!--<item>Machu picchu (portrait)</item>-->
+        <item>Pisa tower (landscape)</item>
+        <item>Pisa tower (portrait)</item>
         <item>Browse…</item>
     </string-array>
 </resources>

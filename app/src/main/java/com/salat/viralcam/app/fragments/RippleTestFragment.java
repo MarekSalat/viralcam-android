@@ -33,7 +33,7 @@ public class RippleTestFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        Uri backgroundUri = Constants.getUriFromResource(getResources(), R.raw.panda);
+        Uri backgroundUri = Constants.getUriFromResource(getResources(), R.raw.eiffel_tower_port);
         Bitmap background = getBitmap(backgroundUri);
         final ImageView imageView = (ImageView) view.findViewById(R.id.image_view);
         imageView.setImageBitmap(background);

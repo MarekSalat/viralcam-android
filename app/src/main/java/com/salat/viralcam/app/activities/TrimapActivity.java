@@ -129,8 +129,8 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         String foregroundUriString = intent.getStringExtra(INTENT_EXTRA_FOREGROUND_IMAGE_URI);
         String backgroundUriString = intent.getStringExtra(INTENT_EXTRA_BACKGROUND_IMAGE_URI);
 
-        Uri defaultForegroundUri = Constants.getUriFromResource(getResources(), R.raw.pizza_tower);
-        Uri defaultBackgroundUri = Constants.getUriFromResource(getResources(), R.raw.panda);
+        Uri defaultForegroundUri = Constants.getUriFromResource(getResources(), R.raw.eiffel_tower_port);
+        Uri defaultBackgroundUri = Constants.getUriFromResource(getResources(), R.raw.me);
 
         foregroundUri = foregroundUriString == null || foregroundUriString.isEmpty() ? defaultForegroundUri : Uri.parse(foregroundUriString);
         backgroundUri = backgroundUriString == null || backgroundUriString.isEmpty() ? defaultBackgroundUri : Uri.parse(backgroundUriString);

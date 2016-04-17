@@ -29,7 +29,7 @@ public class TestSandboxActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Uri backgroundUri = Constants.getUriFromResource(getResources(), R.raw.panda);
+        Uri backgroundUri = Constants.getUriFromResource(getResources(), R.raw.eiffel_tower_port);
         Bitmap background = getBitmap(backgroundUri);
         final ImageView imageView = (ImageView) findViewById(R.id.image_view);
         assert imageView != null;
