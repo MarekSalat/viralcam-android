@@ -40,12 +40,6 @@
       <sourceFolder url="file://$MODULE_DIR$/src/alphaDebug/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/alphaDebug/jni" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/alphaDebug/renderscript" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/r/androidTest/alpha/debug" isTestSource="true" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/aidl/androidTest/alpha/debug" isTestSource="true" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/buildConfig/androidTest/alpha/debug" isTestSource="true" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/rs/androidTest/alpha/debug" isTestSource="true" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/res/rs/androidTest/alpha/debug" type="java-test-resource" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/res/resValues/androidTest/alpha/debug" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/testAlphaDebug/res" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/testAlphaDebug/resources" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/testAlphaDebug/assets" type="java-test-resource" />
@@ -53,6 +47,12 @@
       <sourceFolder url="file://$MODULE_DIR$/src/testAlphaDebug/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/testAlphaDebug/jni" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/testAlphaDebug/rs" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/r/androidTest/alpha/debug" isTestSource="true" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/aidl/androidTest/alpha/debug" isTestSource="true" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/buildConfig/androidTest/alpha/debug" isTestSource="true" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/rs/androidTest/alpha/debug" isTestSource="true" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/res/rs/androidTest/alpha/debug" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/res/resValues/androidTest/alpha/debug" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/alpha/res" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/alpha/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/alpha/assets" type="java-resource" />
@@ -60,13 +60,6 @@
       <sourceFolder url="file://$MODULE_DIR$/src/alpha/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/alpha/jni" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/alpha/renderscript" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/res" type="java-test-resource" />
-      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/resources" type="java-test-resource" />
-      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/assets" type="java-test-resource" />
-      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/aidl" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/java" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/jni" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/rs" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/androidTestAlpha/res" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/androidTestAlpha/resources" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/androidTestAlpha/assets" type="java-test-resource" />
@@ -74,6 +67,13 @@
       <sourceFolder url="file://$MODULE_DIR$/src/androidTestAlpha/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/androidTestAlpha/jni" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/androidTestAlpha/rs" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/res" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/resources" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/assets" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/aidl" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/jni" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/testAlpha/rs" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/debug/res" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/debug/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/debug/assets" type="java-resource" />
@@ -126,11 +126,15 @@
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-analytics/8.4.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-basement/8.4.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/incremental" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/instant-run-support" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/jniLibs" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/manifests" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/objectFiles" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/pre-dexed" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/res" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/rs" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/symbols" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/transforms" />
       <excludeFolder url="file://$MODULE_DIR$/build/outputs" />
       <excludeFolder url="file://$MODULE_DIR$/build/tmp" />
     </content>

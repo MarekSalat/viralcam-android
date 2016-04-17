@@ -29,7 +29,6 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Toast;
@@ -49,6 +48,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
 @SuppressWarnings("ConstantConditions")
 public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
     private static final String TAG = "TrimapActivity";
@@ -61,8 +61,6 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         EDIT_COLOR,
     }
 
-    private State state = State.INIT_TRIMAP;
-
     public static final float MIN_SCALE_FACTOR = 1f;
     public static final float MAX_SCALE_FACTOR = 5f;
 
@@ -70,30 +68,38 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
     public static final String INTENT_EXTRA_FOREGROUND_IMAGE_URI = "TrimapActivity.INTENT_EXTRA_FOREGROUND_IMAGE_URI";
     public static final int BOUNDINGBOX_PADDING = 4;
     private static final int SHARE_REQUEST = 99;
-    private View layout;
 
-    private ProgressDialog processDialog;
-    private Bitmap foreground;
+    private View layout;
+    protected Toolbar toolbar;
+    private TrimapActivityUIMarshaller uiMarshaller;
+
+    protected ProgressDialog processDialog;
+    protected Bitmap foreground;
     private Bitmap background;
 
-    private ScaleGestureDetector scaleGestureDetector;
-    private ImageView imageView;
-    private Uri foregroundUri;
-    private Uri backgroundUri;
-    private Snackbar markEdgeSnackbar;
-    private DrawTrimapView drawTrimapView;
-    private View buttonDone;
-    private View buttonEditTrimap;
-    private View brushGroup;
-    private View editDoneGroup;
-    private Bitmap lastImageResult;
-    private Tracker tracker;
-    private Bitmap onlyForeground;
-    private Rect foregroundBoundingBox;
-    private AppCompatSeekBar lightSeekBar;
-    private AppCompatSeekBar colorSeekBar;
-    private View buttonClose;
-    private View editOptionGroup;
+    protected ScaleGestureDetector scaleGestureDetector;
+    protected ImageView imageView;
+    protected Uri foregroundUri;
+    protected Uri backgroundUri;
+    protected Snackbar markEdgeSnackbar;
+    protected DrawTrimapView drawTrimapView;
+    protected View buttonDone;
+    protected View buttonEditTrimap;
+    protected View brushGroup;
+    protected View editDoneGroup;
+    protected Bitmap lastImageResult;
+    protected Tracker tracker;
+    protected Bitmap onlyForeground;
+    protected Rect foregroundBoundingBox;
+    protected AppCompatSeekBar lightSeekBar;
+    protected AppCompatSeekBar colorSeekBar;
+    protected View buttonClose;
+    protected View editOptionGroup;
+    private ColorMatrixColorFilter colorMatrixColorFilter = new ColorMatrixColorFilter(new ColorMatrix());
+
+    private int originalLightSeekBarProgress;
+    private int originalColorSeekBarProgress;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,7 +113,7 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         AnalyticsTrackers.initialize(this);
         tracker = AnalyticsTrackers.tracker().get(AnalyticsTrackers.Target.APP);
 
-        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitle("");
 
         setSupportActionBar(toolbar);
@@ -137,6 +143,8 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
             finish();
         }
 
+        uiMarshaller = new TrimapActivityUIMarshaller(State.INIT_TRIMAP, this);
+
         imageView = (ImageView) findViewById(R.id.image_view);
         imageView.setImageBitmap(foreground);
 
@@ -163,44 +171,27 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
 
         drawTrimapView = (DrawTrimapView) findViewById(R.id.drawTrimapView);
         drawTrimapView.setDrawTrimapEventsListener(new DrawTrimapView.DrawTrimapEvents() {
-            boolean canShowButtons = false;
-
             @Override
             public void onDrawStart(DrawTrimapView view) {
-                markEdgeSnackbar.dismiss();
-                if (state == State.INIT_TRIMAP)
-                    toolbar.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_top));
-                if (!canShowButtons || state != State.EDIT_TRIMAP)
-                    return;
-                brushGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_bottom));
-                editDoneGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_bottom));
+                uiMarshaller.hideAll();
             }
 
             @Override
             public void onDrawEnd(DrawTrimapView view) {
-                if (state == State.INIT_TRIMAP)
-                    toolbar.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_top));
-                if (!canShowButtons || state != State.EDIT_TRIMAP)
-                    return;
-                brushGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
-                editDoneGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
+                uiMarshaller.showAll();
             }
 
             @Override
             public void onStateChange(DrawTrimapView view, DrawTrimapView.TrimapDrawState state) {
-                if (canShowButtons || state != DrawTrimapView.TrimapDrawState.TUNING) {
-                    return;
-                }
-                canShowButtons = true;
-
-                buttonDone.callOnClick();
+                if (state == DrawTrimapView.TrimapDrawState.TUNING)
+                    buttonDone.callOnClick();
             }
         });
 
         buttonDone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (state == State.EDIT_TRIMAP || state == State.INIT_TRIMAP) {
+                if (uiMarshaller.state() == State.EDIT_TRIMAP || uiMarshaller.state()  == State.INIT_TRIMAP) {
                     processDialog.show();
                     final long timeBeforeCalculation = System.currentTimeMillis();
 
@@ -281,22 +272,22 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
                             // free some memory. It is not needed any more
                             image.recycle();
                             alpha.recycle();
-                            drawForegroundOverBackground(tempPaint, null);
+                            drawForegroundOverBackground(tempPaint, colorMatrixColorFilter);
                             logImageProcessingDuration(System.currentTimeMillis() - timeBeforeCalculation);
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    uiMarshaller.changeUiByState(TrimapActivity.State.RESULT);
+                                }
+                            });
                         }
 
 
                     };
                     task.start();
-                }
-                if (state == State.EDIT_COLOR || state == State.EDIT_LIGHT) {
-                    state = State.RESULT;
-
-                    editDoneGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_bottom));
-                    prepareShowResultUI();
-                }
-
-                state = State.RESULT;
+                } else
+                    uiMarshaller.changeUiByState(State.RESULT);
             }
         });
 
@@ -334,21 +325,7 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
             @Override
             public void onClick(View v) {
                 logEditAction();
-                state = State.EDIT_TRIMAP;
-
-                if (drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.DONE) {
-                    setImageViewBitmapWithMatrix(drawTrimapView.getImageMatrix(), imageView, foreground);
-
-                    drawTrimapView.setState(DrawTrimapView.TrimapDrawState.TUNING);
-                    drawTrimapView.setVisibility(View.VISIBLE);
-                }
-
-                editOptionGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_bottom));
-
-                buttonDone.setVisibility(View.VISIBLE);
-                brushGroup.setVisibility(View.VISIBLE);
-                brushGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
-                editDoneGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
+                uiMarshaller.changeUiByState(State.EDIT_TRIMAP);
             }
         });
 
@@ -423,13 +400,16 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         findViewById(R.id.button_edit_light).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                state = State.EDIT_LIGHT;
-                lightSeekBar.setVisibility(View.VISIBLE);
-                buttonDone.setVisibility(View.VISIBLE);
+                originalLightSeekBarProgress = lightSeekBar.getProgress();
+                uiMarshaller.changeUiByState(State.EDIT_LIGHT);
+            }
+        });
 
-                editOptionGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_down_from_bottom));
-                lightSeekBar.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
-                editDoneGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
+        findViewById(R.id.button_edit_color).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                originalColorSeekBarProgress = colorSeekBar.getProgress();
+                uiMarshaller.changeUiByState(State.EDIT_COLOR);
             }
         });
     }
@@ -457,43 +437,16 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
 
         Rect backgroundRect = RectHelper.scale(foregroundBoundingBox, scale2);
         resultCanvas.drawBitmap(onlyForeground, null, backgroundRect, tempPaint);
-
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                prepareShowResultUI();
-            }
-        });
-    }
-
-    private void prepareShowResultUI() {
-
-        if(lastImageResult != null){
-            // drawTrimapView contains clear matrix with current scale and translation
-            Matrix drawTrimapViewMatrix = drawTrimapView.getImageMatrix();
-            setImageViewBitmapWithMatrix(drawTrimapViewMatrix, imageView, lastImageResult);
-        }
-
-        drawTrimapView.setState(DrawTrimapView.TrimapDrawState.DONE);
-        drawTrimapView.setVisibility(View.INVISIBLE);
-        processDialog.hide();
-
-        if(state == State.EDIT_LIGHT || state == State.EDIT_COLOR)
-            return;
-
-        brushGroup.clearAnimation();
-        brushGroup.setVisibility(View.GONE);
-        buttonDone.setVisibility(View.GONE);
-
-        editOptionGroup.setVisibility(View.VISIBLE);
-        editOptionGroup.startAnimation(AnimationUtils.loadAnimation(TrimapActivity.this, R.anim.slide_up_from_bottom));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        markEdgeSnackbar.show();
+        if(uiMarshaller.state() == State.INIT_TRIMAP)
+            markEdgeSnackbar.show();
+        else
+            markEdgeSnackbar.dismiss();
     }
 
     @Override
@@ -533,10 +486,7 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         //Snackbar.make(layout, "Clicked at '" + item.getTitle() + "' [" + id + "]", Snackbar.LENGTH_SHORT).show();
 
         if (id == android.R.id.home){
-            if(drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.DONE || drawTrimapView.getState() == DrawTrimapView.TrimapDrawState.INIT)
-                super.onBackPressed();
-            else
-                prepareShowResultUI();
+            onBackPressed();
             return true;
         }
 
@@ -574,6 +524,22 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if(uiMarshaller.state() == State.INIT_TRIMAP || uiMarshaller.state() == State.RESULT)
+            super.onBackPressed();
+        else {
+            if(uiMarshaller.state() == State.EDIT_COLOR)
+                colorSeekBar.setProgress(originalColorSeekBarProgress);
+
+            if(uiMarshaller.state() == State.EDIT_LIGHT)
+                lightSeekBar.setProgress(originalLightSeekBarProgress);
+
+            uiMarshaller.changeUiByState(State.RESULT);
+        }
+
     }
 
     private void swapImagesAction() {
@@ -692,7 +658,7 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         });
     }
 
-    private void setImageViewBitmapWithMatrix(Matrix drawTrimapViewMatrix, ImageView imageView, Bitmap result) {
+    protected void setImageViewBitmapWithMatrix(Matrix drawTrimapViewMatrix, ImageView imageView, Bitmap result) {
         // init image to initial position
         imageView.setScaleType(ImageView.ScaleType.FIT_START);
         imageView.setImageBitmap(result);
@@ -743,8 +709,10 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
         array[9] = light;
         array[14] = light;
 
-        ColorMatrixColorFilter colorMatrixColorFilter = new ColorMatrixColorFilter(colorMatrix);
+        colorMatrixColorFilter = new ColorMatrixColorFilter(colorMatrix);
         drawForegroundOverBackground(new Paint(), colorMatrixColorFilter);
+
+        setImageViewBitmapWithMatrix(drawTrimapView.getImageMatrix(), imageView, lastImageResult);
     }
 
     @Override

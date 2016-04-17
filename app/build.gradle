@@ -11,7 +11,7 @@ model {
 
         defaultConfig {
             applicationId projectApplicationID
-            minSdkVersion.apiLevel 16
+            minSdkVersion.apiLevel 23
             targetSdkVersion.apiLevel 23
             versionCode projectVersionCode
             versionName projectVersionName
@@ -20,14 +20,8 @@ model {
 
         ndk {
             moduleName "nativeAlphaMatte"
-            ldLibs.add("m")
-            ldLibs.add("log")
-            ldLibs.add("jnigraphics")
-            ldLibs.add("android")
-            cppFlags.add("-std=c++11")
-            cppFlags.add("-O3")
-            cppFlags.add("-ffast-math")
-            cppFlags.add("-fexceptions")
+            ldLibs.addAll(["m", "log", "jnigraphics", "android"])
+            cppFlags.addAll(["-std=c++11", "-O3", "-ffast-math", "-fexceptions"])
             stl "gnustl_static"
             platformVersion 16
         }
@@ -43,8 +37,11 @@ model {
                 }
             }
             debug {
-                applicationIdSuffix ".debug"
+                useProguard  false
                 minifyEnabled false
+                shrinkResources false
+                multiDexEnabled false
+                applicationIdSuffix ".debug"
 
                 ndk {
                     debuggable true
