@@ -2,8 +2,8 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        def projectVersionCode = 105
-        def projectVersionName = "1.5"
+        def projectVersionCode = 106
+        def projectVersionName = "1.6"
         def projectApplicationID = "com.salat.viralcam.app"
 
         compileSdkVersion 23
