@@ -205,6 +205,6 @@
         android:paddingTop="8dp"
         android:textSize="16sp"
         android:id="@+id/description"
-        android:text="You can tune your image by drawing definite foreground, background or unknown region."
+        android:text="You can tune your image by marking the foreground, background or an unknown region."
         android:gravity="center|top" />
 </LinearLayout>

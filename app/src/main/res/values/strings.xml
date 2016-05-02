@@ -30,31 +30,7 @@
 
 
     <string name="changelog_dialog_title">What\'s new in %1$s</string>
-    <string name="changelog_dialog_text"><![CDATA[
-        <h3>Features</h3>
-        <ul>
-            <li>What\'s new dialog will be shown after update when you start application.</li>
-        </ul>
-        <ul>
-            <li>Redesign
-            </li>
-        </ul>
-        <ul>
-            <li>Swap between front facing and rear camera
-            </li>
-        </ul>
-        <ul>
-            <li>Swap foreground and background image
-            </li>
-        </ul>
-        <hr/>
-        <h3>Fixed bugs</h3>
-        <ul>
-            <li>Kitkat (and lover) devices had problems with taking pictures on portrait mode.
-                Please let me know if the problem persists.
-            </li>
-        </ul>
-        ]]></string>
+    <string name="changelog_dialog_text"/>
     <string name="title_activity_introduction">Introduction</string>
     <string name="section_format">Hello World from section: %1$d</string>
     <string name="capture_scene_button_description">capture scene</string>

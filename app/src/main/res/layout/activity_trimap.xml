@@ -39,6 +39,111 @@
             app:popupTheme="@style/AppTheme.PopupOverlay" />
     </android.support.design.widget.AppBarLayout>
 
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+       <LinearLayout
+            android:id="@+id/edit_options_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="24dp"
+            android:paddingTop="48dp"
+            android:background="@drawable/gradient_bottom"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <LinearLayout
+                android:id="@+id/button_edit_light"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_weight="1"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:paddingBottom="8dp"
+                    android:text="Light" />
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_brightness_6_white_48dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/button_edit_color"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_weight="1"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:paddingBottom="8dp"
+                    android:text="Color" />
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_color_lens_white_48dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/button_edit_trimap"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_weight="1"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:paddingBottom="8dp"
+                    android:text="Trimap" />
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_gesture_white_48dp" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+        </LinearLayout>
+    </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/brush_group"
@@ -48,73 +153,105 @@
         android:layout_gravity="bottom"
         android:background="@drawable/gradient_bottom"
         android:clipChildren="false"
-        android:clipToPadding="false" >
+        android:clipToPadding="false"
+        android:visibility="gone">
 
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="2" />
+            android:layout_weight="1" />
 
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/button_brush_magic"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:orientation="vertical"
+            android:gravity="center"
             android:layout_weight="1">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:paddingBottom="8dp"
+                android:text="Auto"/>
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_image_layer_star"/>
-        </FrameLayout>
+        </LinearLayout>
 
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/button_brush_clear"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:orientation="vertical"
+            android:gravity="center"
             android:layout_weight="1">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:paddingBottom="8dp"
+                android:text="Clear"/>
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:layout_gravity="center"
                 android:src="@drawable/ic_filter_none_white_48dp"/>
-        </FrameLayout>
+        </LinearLayout>
 
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/button_brush_background"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:orientation="vertical"
+            android:gravity="center"
             android:layout_weight="1">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:paddingBottom="8dp"
+                android:text="Back"/>
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_flip_to_back_white_48dp"/>
-        </FrameLayout>
+        </LinearLayout>
 
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/button_brush_foreground"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:orientation="vertical"
+            android:gravity="center"
             android:layout_weight="1">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:paddingBottom="8dp"
+                android:text="Front"/>
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_flip_to_front_white_48dp"/>
-        </FrameLayout>
+        </LinearLayout>
 
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="2" />
+            android:layout_weight="1" />
     </LinearLayout>
 
     <RelativeLayout
@@ -126,32 +263,19 @@
         android:clipChildren="false"
         android:clipToPadding="false">
         <FrameLayout
-            android:id="@+id/button_invert_trimap"
+            android:id="@+id/button_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
             android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
             android:visibility="gone">
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_invert_colors_white_48dp"/>
-        </FrameLayout>
-
-        <FrameLayout
-            android:id="@+id/button_edit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:layout_alignParentEnd="true">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_mode_edit_white_48dp"/>
+                android:src="@drawable/ic_close_white_48dp"/>
         </FrameLayout>
 
         <FrameLayout
@@ -161,6 +285,7 @@
             android:clickable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
             android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
             android:visibility="gone" >
             <ImageView
                 android:layout_width="24dp"
@@ -168,5 +293,34 @@
                 android:layout_gravity="center"
                 android:src="@drawable/ic_done_white_48dp"/>
         </FrameLayout>
+
+        <android.support.v7.widget.AppCompatSeekBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/light_seekbar"
+            android:layout_toRightOf="@id/button_close"
+            android:layout_toLeftOf="@id/button_done"
+            android:layout_marginStart="24dp"
+            android:layout_marginLeft="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginRight="24dp"
+            android:max="100"
+            android:progress="50"
+            android:visibility="gone"/>
+
+        <android.support.v7.widget.AppCompatSeekBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/button_close"
+            android:layout_toLeftOf="@id/button_done"
+            android:layout_marginStart="24dp"
+            android:layout_marginLeft="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginRight="24dp"
+            android:id="@+id/color_seekbar"
+            android:max="100"
+            android:progress="50"
+            android:visibility="gone"/>
     </RelativeLayout>
+
 </android.support.design.widget.CoordinatorLayout>

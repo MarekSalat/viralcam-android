@@ -71,17 +71,16 @@ public class HomeScreenActivity extends AppCompatActivity {
     }
 
     private boolean shouldBeWhatsNewShown() {
+        if(getString(R.string.changelog_dialog_text).isEmpty())
+            return false;
+
         SharedPreferences sharedPref = getSharedPreferences(PRIVATE_PREF, Context.MODE_PRIVATE);
 
         int savedVersionNumber = sharedPref.getInt(VERSION_KEY, 0);
         int currentVersionNumber = BuildConfig.VERSION_CODE;
 
-        if (Constants.ALWAYS_SHOW_WHATS_NEW || currentVersionNumber > savedVersionNumber) {
-            showWhatsNewDialog();
-            return true;
-        }
+        return Constants.ALWAYS_SHOW_WHATS_NEW || currentVersionNumber > savedVersionNumber;
 
-        return false;
     }
 
     private void neverShowIntroAgain() {

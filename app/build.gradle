@@ -1,58 +1,62 @@
 apply plugin: 'com.android.model.application'
 
 model {
-    def projectVersionCode = 104
-    def projectVersionName = "1.4"
-    def projectApplicationID = "com.salat.viralcam.app"
-
     android {
-        compileSdkVersion = 23
-        buildToolsVersion = "23.0.1"
+        def projectVersionCode = 106
+        def projectVersionName = "1.6"
+        def projectApplicationID = "com.salat.viralcam.app"
 
-        defaultConfig.with {
-            applicationId = projectApplicationID
-            minSdkVersion.apiLevel = 16
-            targetSdkVersion.apiLevel = 23
-            versionCode = projectVersionCode
-            versionName = projectVersionName
+        compileSdkVersion 23
+        buildToolsVersion "23.0.1"
+
+        defaultConfig {
+            applicationId projectApplicationID
+            minSdkVersion.apiLevel 16
+            targetSdkVersion.apiLevel 23
+            versionCode projectVersionCode
+            versionName projectVersionName
 //            testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
         }
-    }
 
-    android.buildTypes {
-        release {
-            minifyEnabled = true
-            proguardFiles += file('proguard-rules.pro')
-            multiDexEnabled = true
+        ndk {
+            moduleName "nativeAlphaMatte"
+            ldLibs.addAll(["m", "log", "jnigraphics", "android"])
+            cppFlags.addAll(["-std=c++11", "-O3", "-ffast-math", "-fexceptions"])
+            stl "gnustl_static"
+            platformVersion 16
+        }
 
-            ndk.with {
-                debuggable = false
+        buildTypes {
+            release {
+                minifyEnabled true
+                multiDexEnabled true
+                proguardFiles.add(file('proguard-rules.pro'))
+
+                ndk {
+                    debuggable false
+                }
+            }
+            debug {
+                useProguard  false
+                minifyEnabled false
+                shrinkResources false
+                multiDexEnabled false
+                applicationIdSuffix ".debug"
+
+                ndk {
+                    debuggable true
+                }
             }
         }
-        debug {
-            applicationIdSuffix = ".debug"
-            minifyEnabled = false
-            proguardFiles = []
 
-            ndk.with {
-                debuggable = true
+        productFlavors {
+            create("production"){
+                versionCode 1000 + projectVersionCode
             }
-        }
-    }
 
-    android.ndk {
-        moduleName = "nativeAlphaMatte"
-        ldLibs += ["m", "log", "jnigraphics", "android"]
-        cppFlags += ["-std=c++11", "-O3", "-ffast-math", "-fexceptions"]
-        stl = "gnustl_static"
-        platformVersion = 16
-    }
-
-    android.productFlavors {
-        create("alpha") {
-            versionName = projectVersionName + "-alpha"
-            applicationId = projectApplicationID
-        }
+            create("alpha") {
+                versionName projectVersionName + "-alpha"
+            }
 
 //        create("arm7") {
 //            ndk.abiFilters += "armeabi-v7a"
@@ -63,25 +67,23 @@ model {
 //        create("x86-32") {
 //            ndk.abiFilters += "x86"
 //        }
-        // for detailed abiFilter descriptions, refer to "Supported ABIs" @
-        // https://developer.android.com/ndk/guides/abis.html#sa
-
-        // build one including all cpu architectures
+//        // for detailed abiFilter descriptions, refer to "Supported ABIs" @
+//        // https://developer.android.com/ndk/guides/abis.html#sa
+//
+//        // build one including all cpu architectures
 //        create("all")
+        }
     }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':jellybeansupportlibrary')
-    compile 'com.android.support:appcompat-v7:23.2.1'
-    compile 'com.android.support:support-v4:23.2.1'
-    compile 'com.android.support:support-v13:23.2.1'
-    compile 'com.android.support:design:23.2.1'
+    compile 'com.android.support:appcompat-v7:23.3.0'
+    compile 'com.android.support:support-v4:23.3.0'
+    compile 'com.android.support:support-v13:23.3.0'
+    compile 'com.android.support:design:23.3.0'
     compile 'com.github.paolorotolo:appintro:3.4.0'
-    compile 'com.google.android.gms:play-services-analytics:8.4.0'
+    compile 'com.google.android.gms:play-services-analytics:8.1.0'
     androidTestCompile 'junit:junit:4.12'
 }
-
-
-

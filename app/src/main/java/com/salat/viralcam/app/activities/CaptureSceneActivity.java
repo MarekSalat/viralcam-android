@@ -151,13 +151,16 @@ public class CaptureSceneActivity extends AppCompatActivity {
         builder.setItems(R.array.images, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 takePictureButton.setVisibility(View.VISIBLE);
-                int resourceId = R.raw.panda;
+                int resourceId = R.raw.eiffel_tower_port;
 
                 switch (which){
-                    case 0:  resourceId = R.raw.panda; break;
-                    case 1:  resourceId = R.raw.pizza_tower; break;
-                    case 2:  resourceId = R.raw.game_of_thrones; break;
-                    case 3:  resourceId = R.raw.star_warse; break;
+                    case 0:  resourceId = R.raw.eiffel_tower_port; break;
+//                    case 1:  resourceId = R.raw.great_wall_of_china_land; break;
+                    case 1:  resourceId = R.raw.great_wall_of_china_port; break;
+                    case 2:  resourceId = R.raw.machu_picchu_land; break;
+//                    case 4:  resourceId = R.raw.machu_picchu_port; break;
+                    case 3:  resourceId = R.raw.pisa_land; break;
+                    case 4:  resourceId = R.raw.pisa_port; break;
 
                     default:{
                         logSelectBackground(AnalyticsTrackers.Label.CustomBackground);
