@@ -4,9 +4,9 @@ import android.annotation.TargetApi;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.opengl.GLES31;
+import android.opengl.GLES31Ext;
 import android.opengl.GLUtils;
 import android.os.Build;
-import android.util.Log;
 
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.computeshader.ComputeShader;
@@ -21,9 +21,6 @@ import com.salat.viralcam.app.util.Size;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 import javax.microedition.khronos.opengles.GL10;
 
@@ -41,10 +38,10 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
     private static final int ATOMIC_BUFFER_BINDING = 3;
     private static final int SAMPLE_BUFFER_BINDING = 4;
 
-    private static final int BOUNDARY_SIZE = 16000;
+    private static final int BOUNDARY_SIZE = 8000;
     private static final int BOUNDARY_BUFFER_CAPACITY = 2 * BOUNDARY_SIZE; // (x, y)
     private static final int WORKGROUP_SIZE = 32;
-    public static final int ALPHA_PATCHMATCH_ITERATIONS = 8;
+    public static final int ALPHA_SAMPLEMATCH_ITERATIONS = 8;
 
     static class SandboxVars {
         public int program;
@@ -108,6 +105,20 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
         public Bitmap trimap;
         public Bitmap alpha;
         private ComputeShaderResultCallback callback;
+
+        public int foregroundBoundarySize;
+        public int backgroundBoundarySize;
+
+        public long duration = 0;
+        public long bindTexturesDuration;
+        public long bindBuffersDuration;
+        public long findBoundaryDuration;
+        public long extendBoundaryDuration;
+        public long initializeSamplesDuration;
+        public long alphaSampleMatchDuration;
+        public long updateAlphaMaskDuration;
+        public long alphaCopyDuration;
+        public long readAlphaBufferDuration;
 
         public Args(Bitmap image, Bitmap trimap, Bitmap alpha, ComputeShaderResultCallback callback){
             this.image = image;
@@ -187,47 +198,54 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
     @Override
     public void compute(ComputeShaderArgs _args) {
         Args args = (Args) _args;
+        args.duration = System.nanoTime();
         final int width = args.image.getWidth();
         final int height = args.image.getHeight();
 
         // bind textures image and trimap
-        bindTexture(args.image, imageTexture, IMAGE_BINDING);
-        bindTexture(args.trimap, trimapTexture, TRIMAP_BINDING);
-        ShaderHelper.checkGlError(this, "bindTexture");
+        args.bindTexturesDuration = System.nanoTime(); {
+            bindTexture(args.image, imageTexture, IMAGE_BINDING);
+            bindTexture(args.trimap, trimapTexture, TRIMAP_BINDING);
+            ShaderHelper.checkGlError(this, "bindTexture");
+        }
+        args.bindTexturesDuration = System.nanoTime() - args.bindTexturesDuration;
 
         // create buffer for alpha
         int alphaPixels = width * height;
 
         // bind atomic counters
-        atomicCounters.put(0, 0);
-        atomicCounters.put(1, 0);
-        GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, ATOMIC_BUFFER_BINDING, atomicCounterBuffer);
-        GLES31.glBufferData(GLES31.GL_ATOMIC_COUNTER_BUFFER, atomicCounters.capacity() * Size.ofInt(), atomicCounters, GLES31.GL_DYNAMIC_DRAW);
-        ShaderHelper.checkGlError(this, "glBindBufferBase atomic");
+        args.bindBuffersDuration = System.nanoTime(); {
+            atomicCounters.put(0, 0);
+            atomicCounters.put(1, 0);
+            GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, ATOMIC_BUFFER_BINDING, atomicCounterBuffer);
+            GLES31.glBufferData(GLES31.GL_ATOMIC_COUNTER_BUFFER, atomicCounters.capacity() * Size.ofInt(), atomicCounters, GLES31.GL_DYNAMIC_DRAW);
+            ShaderHelper.checkGlError(this, "glBindBufferBase atomic");
 
-        // bind alpha
-        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, alphaBuffer);
-        GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, alphaPixels * Size.ofInt(), null, GLES31.GL_STATIC_READ);
-        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, ALPHA_BUFFER_BINDING, alphaBuffer);
-        ShaderHelper.checkGlError(this, "alphaBuffer, glBindBuffer, glBufferData, glBindBufferBase, alpha");
+            // bind alpha
+            GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, alphaBuffer);
+            GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, alphaPixels * Size.ofInt(), null, GLES31.GL_STREAM_READ);
+            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, ALPHA_BUFFER_BINDING, alphaBuffer);
+            ShaderHelper.checkGlError(this, "alphaBuffer, glBindBuffer, glBufferData, glBindBufferBase, alpha");
 
-        // bind foreground boundary
-        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, foregroundBoundaryBuffer);
-        GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, BOUNDARY_BUFFER_CAPACITY * Size.ofInt(), null, GLES31.GL_DYNAMIC_READ);
-        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, FOREGROUND_BOUNDARY_BINDING, foregroundBoundaryBuffer);
-        ShaderHelper.checkGlError(this, "foregroundBoundaryBuffer, glBindBuffer, glBufferData, glBindBufferBase");
+            // bind foreground boundary
+            GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, foregroundBoundaryBuffer);
+            GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, BOUNDARY_BUFFER_CAPACITY * Size.ofInt(), null, GLES31.GL_DYNAMIC_COPY);
+            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, FOREGROUND_BOUNDARY_BINDING, foregroundBoundaryBuffer);
+            ShaderHelper.checkGlError(this, "foregroundBoundaryBuffer, glBindBuffer, glBufferData, glBindBufferBase");
 
-        // bind background boundary
-        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, backgroundBoundaryBuffer);
-        GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, BOUNDARY_BUFFER_CAPACITY * Size.ofInt(), null, GLES31.GL_DYNAMIC_READ);
-        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, BACKGROUND_BUFFER_BINDING, backgroundBoundaryBuffer);
-        ShaderHelper.checkGlError(this, "backgroundBoundaryBuffer, glBindBuffer, glBufferData, glBindBufferBase");
+            // bind background boundary
+            GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, backgroundBoundaryBuffer);
+            GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, BOUNDARY_BUFFER_CAPACITY * Size.ofInt(), null, GLES31.GL_DYNAMIC_COPY);
+            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, BACKGROUND_BUFFER_BINDING, backgroundBoundaryBuffer);
+            ShaderHelper.checkGlError(this, "backgroundBoundaryBuffer, glBindBuffer, glBufferData, glBindBufferBase");
 
-        // bind background boundary
-        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, sampleBuffer);
-        GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, alphaPixels * Size.ofInt() * 6, null, GLES31.GL_DYNAMIC_READ);
-        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, SAMPLE_BUFFER_BINDING, sampleBuffer);
-        ShaderHelper.checkGlError(this, "sampleBuffer, glBindBuffer, glBufferData, glBindBufferBase");
+            // bind sample boundary
+            GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, sampleBuffer);
+            GLES31.glBufferData(GLES31.GL_SHADER_STORAGE_BUFFER, alphaPixels * Size.ofInt() * 6, null, GLES31.GL_DYNAMIC_COPY);
+            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, SAMPLE_BUFFER_BINDING, sampleBuffer);
+            ShaderHelper.checkGlError(this, "sampleBuffer, glBindBuffer, glBufferData, glBindBufferBase");
+        }
+        args.bindBuffersDuration = System.nanoTime() - args.bindBuffersDuration;
 
 //        // use program sandbox
 //        GLES31.glUseProgram(sandbox.program);
@@ -256,7 +274,7 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
 //            alphaFromGpuInBytes.order(ByteOrder.nativeOrder());
 //            IntBuffer alphaFromGpu = alphaFromGpuInBytes.asIntBuffer();
 //
-//            final long start = System.currentTimeMillis(); {
+//            final long start = System.nanoTime(); {
 //                if(tempIntBuffer.length < alphaPixels)
 //                    tempIntBuffer = new int[alphaPixels];
 //
@@ -273,11 +291,13 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
 //            args.alpha.copyPixelsFromBuffer(alphaFromGpuInBytes);
 //            /**/
 //            }
-//            final long end = System.currentTimeMillis();
+//            final long end = System.nanoTime();
 //            Log.e("foo", String.format("alpha copying %d [ms]", end - start));
 //        }
 
         // use program findBoundary
+
+        args.findBoundaryDuration = System.nanoTime();
         GLES31.glUseProgram(findBoundary.program);
         ShaderHelper.checkGlError(this, "glUseProgram"); {
             // set dimensions
@@ -288,8 +308,10 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
 
             dispatchComputeAndWait(width, height);
         }
+        args.findBoundaryDuration = System.nanoTime() - args.findBoundaryDuration;
 
-        // use program extendBoundary
+//        // use program extendBoundary
+        args.extendBoundaryDuration = System.nanoTime();
         GLES31.glUseProgram(extendBoundary.program);
         ShaderHelper.checkGlError(this, "glUseProgram"); {
             // set dimensions
@@ -300,6 +322,7 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
 
             dispatchComputeAndWait(width, height);
         }
+        args.extendBoundaryDuration = System.nanoTime() - args.extendBoundaryDuration;
         
         // TODO: 16.02.2016 sort boundary pixels by luminescence
 
@@ -309,9 +332,12 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
                 .order(ByteOrder.nativeOrder())
                 .asIntBuffer();
 
+        args.foregroundBoundarySize = Math.min(BOUNDARY_SIZE, atomicCountersResult.get(0));
+        args.backgroundBoundarySize = Math.min(BOUNDARY_SIZE, atomicCountersResult.get(1));
         final int minBoundarySize = Math.min(BOUNDARY_SIZE, Math.min(atomicCountersResult.get(0), atomicCountersResult.get(1)));
 
         // use program initializeSamples
+        args.initializeSamplesDuration = System.nanoTime();
         GLES31.glUseProgram(initializeSamples.program);
         ShaderHelper.checkGlError(this, "glUseProgram"); {
             // set dimensions
@@ -322,8 +348,10 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
 
             dispatchComputeAndWait(width, height);
         }
+        args.initializeSamplesDuration = System.nanoTime() - args.initializeSamplesDuration;
 
         // use program alphaPatchMatch
+        args.alphaSampleMatchDuration = System.nanoTime();
         GLES31.glUseProgram(alphaPatchMatch.program);
         ShaderHelper.checkGlError(this, "glUseProgram"); {
             // set dimensions
@@ -333,12 +361,14 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
             GLES31.glUniform1i(alphaPatchMatch.imageLocation, IMAGE_BINDING);
             ShaderHelper.checkGlError(this, "glUniform1i");
 
-            for (int i = 0; i < ALPHA_PATCHMATCH_ITERATIONS; i++) {
+            for (int i = 0; i < ALPHA_SAMPLEMATCH_ITERATIONS; i++) {
                 dispatchComputeAndWait(width, height);
             }
         }
+        args.alphaSampleMatchDuration = System.nanoTime() - args.alphaSampleMatchDuration;
 
         // use program updateAlphaMask
+        args.updateAlphaMaskDuration = System.nanoTime();
         GLES31.glUseProgram(updateAlphaMask.program);
         ShaderHelper.checkGlError(this, "glUseProgram"); {
             // set dimensions
@@ -349,26 +379,31 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
 
             dispatchComputeAndWait(width, height);
         }
+        args.updateAlphaMaskDuration = System.nanoTime() - args.updateAlphaMaskDuration;
 
         setShaderResult(args, width, height, alphaPixels);
 
         // delete all mapped stuff
-        GLES31.glUnmapBuffer(GLES31.GL_SHADER_STORAGE_BUFFER);
+        //GLES31.glUnmapBuffer(GLES31.GL_SHADER_STORAGE_BUFFER);
 //        GLES31.glUnmapBuffer(GLES31.GL_ATOMIC_COUNTER_BUFFER);
         ShaderHelper.checkGlError(this, "glUnmapBuffer");
 
+        args.duration = System.nanoTime() - args.duration;
         args.getResultCallback().success(this, args);
     }
 
     private void setShaderResult(Args args, int width, int height, int alphaPixels) {
         // read alpha values
-        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, ALPHA_BUFFER_BINDING, alphaBuffer);
-        ByteBuffer alphaFromGpuInBytes = (ByteBuffer) GLES31.glMapBufferRange(
-                GLES31.GL_SHADER_STORAGE_BUFFER, 0, alphaPixels * Size.ofInt(), GLES31.GL_MAP_READ_BIT );
-        alphaFromGpuInBytes.order(ByteOrder.nativeOrder());
-        IntBuffer alphaFromGpu = alphaFromGpuInBytes.asIntBuffer();
+        args.readAlphaBufferDuration = System.nanoTime();
+            GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, ALPHA_BUFFER_BINDING, alphaBuffer);
+            ByteBuffer alphaFromGpuInBytes = (ByteBuffer) GLES31.glMapBufferRange(
+                    GLES31.GL_SHADER_STORAGE_BUFFER, 0, alphaPixels * Size.ofInt(), GLES31.GL_MAP_READ_BIT
+            );
+            alphaFromGpuInBytes.order(ByteOrder.nativeOrder());
+            IntBuffer alphaFromGpu = alphaFromGpuInBytes.asIntBuffer();
+        args.readAlphaBufferDuration = System.nanoTime() - args.readAlphaBufferDuration;
 
-        final long start = System.currentTimeMillis();
+        args.alphaCopyDuration = System.nanoTime();
         {
             if (tempIntBuffer.length < alphaPixels)
                 tempIntBuffer = new int[alphaPixels];
@@ -386,8 +421,7 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
             args.alpha.copyPixelsFromBuffer(alphaFromGpuInBytes);
             /**/
         }
-        final long end = System.currentTimeMillis();
-        Log.e("foo", String.format("alpha copying %d [ms]", end - start));
+        args.alphaCopyDuration = System.nanoTime() - args.alphaCopyDuration;
     }
 
     private void dispatchComputeAndWait(int width, int height) {

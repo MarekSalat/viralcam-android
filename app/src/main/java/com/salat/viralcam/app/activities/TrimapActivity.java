@@ -687,8 +687,8 @@ public class TrimapActivity extends AppCompatActivity implements SeekBar.OnSeekB
     }
 
 
-    public native void calculateAlphaMask(Bitmap image, Bitmap trimap, Bitmap outAlpha);
-    public native void findBoundingBox(Bitmap trimap, Rect rect);
+    public static native void calculateAlphaMask(Bitmap image, Bitmap trimap, Bitmap outAlpha);
+    public static native void findBoundingBox(Bitmap trimap, Rect rect);
 
     static {
         System.loadLibrary("nativeAlphaMatte");

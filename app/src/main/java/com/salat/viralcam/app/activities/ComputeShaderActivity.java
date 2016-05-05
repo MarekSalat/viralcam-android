@@ -99,7 +99,7 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                fab.performClick();
+                //fab.performClick();
             }
         };
         imageSpinner.setOnItemSelectedListener(listener);
@@ -212,8 +212,34 @@ public class ComputeShaderActivity extends AppCompatActivity implements ComputeS
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                String message = String.format("Duration %d [ms]", end - start);
-                                Log.i(TAG, message);
+
+                                String message = String.format("Duration              %5.2f [ms]", args.duration * 1.0e-6);
+                                Log.e(TAG, message);
+                                Log.i(TAG, String.format("foregroundBoundarySize size %5.2f", args.foregroundBoundarySize * 1.0e-6));
+                                Log.i(TAG, String.format("backgroundBoundarySize size %5.2f", args.backgroundBoundarySize * 1.0e-6));
+
+                                Log.i(TAG, String.format("bindTextures duration       %5.2f [ms]", args.bindTexturesDuration * 1.0e-6));
+                                Log.i(TAG, String.format("bindBuffers duration        %5.2f [ms]", args.bindBuffersDuration * 1.0e-6));
+                                Log.i(TAG, String.format("findBoundary duration       %5.2f [ms]", args.findBoundaryDuration * 1.0e-6));
+                                Log.i(TAG, String.format("extendBoundary duration     %5.2f [ms]", args.extendBoundaryDuration * 1.0e-6));
+                                Log.i(TAG, String.format("initializeSamples duration  %5.2f [ms]", args.initializeSamplesDuration * 1.0e-6));
+                                Log.i(TAG, String.format("alphaSampleMatch duration   %5.2f [ms]", args.alphaSampleMatchDuration * 1.0e-6));
+                                Log.i(TAG, String.format("updateAlphaMask duration    %5.2f [ms]", args.updateAlphaMaskDuration * 1.0e-6));
+                                Log.i(TAG, String.format("readAlphaBuffer duration    %5.2f [ms]", args.readAlphaBufferDuration * 1.0e-6));
+                                Log.i(TAG, String.format("alphaCopy duration          %5.2f [ms]", args.alphaCopyDuration * 1.0e-6));
+                                long sumOfDurations = args.bindTexturesDuration +
+                                        args.bindBuffersDuration +
+                                        args.alphaCopyDuration +
+                                        args.findBoundaryDuration +
+                                        args.extendBoundaryDuration +
+                                        args.initializeSamplesDuration +
+                                        args.alphaSampleMatchDuration +
+                                        args.readAlphaBufferDuration +
+                                        args.updateAlphaMaskDuration;
+                                Log.e(TAG, String.format("sum of durations %5.2f [ms], real duration %5.2f, diff %5.2f", sumOfDurations * 1.0e-6 , args.duration* 1.0e-6, (args.duration - sumOfDurations) * 1.0e-6));
+                                Log.e(TAG, String.format("duration %5.2f without readAlphaBuffer", (args.duration - args.readAlphaBufferDuration) * 1.0e-6));
+                                Log.e(TAG, String.format("duration %5.2f without readAlphaBuffer and alpha copy", (args.duration - args.readAlphaBufferDuration - args.alphaCopyDuration) * 1.0e-6));
+
                                 Toast.makeText(ComputeShaderActivity.this, message, Toast.LENGTH_SHORT).show();
 
                                 alphaView.setImageBitmap(args.alpha);

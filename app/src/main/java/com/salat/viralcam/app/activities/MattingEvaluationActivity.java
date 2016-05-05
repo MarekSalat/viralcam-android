@@ -1,14 +1,8 @@
 package com.salat.viralcam.app.activities;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -23,16 +17,12 @@ import com.salat.viralcam.app.model.EvaluationResult;
 import com.salat.viralcam.app.model.MattingDataSet;
 import com.salat.viralcam.app.util.MattingHelper;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
 public class MattingEvaluationActivity extends AppCompatActivity {
     private static final String TAG = "MattingEvaluation";
     private View evaluateCpuButton;
     private View evaluateGpuButton;
 
-    private enum Evaluation {
+    private enum EvaluationType {
         CPU,
         GPU,
     }
@@ -53,19 +43,19 @@ public class MattingEvaluationActivity extends AppCompatActivity {
         evaluateCpuButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                runEvaluation(Evaluation.CPU);
+                runEvaluation(EvaluationType.CPU);
             }
         });
 
         evaluateGpuButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                runEvaluation(Evaluation.GPU);
+                runEvaluation(EvaluationType.GPU);
             }
         });
     }
 
-    private void runEvaluation(final Evaluation evaluation) {
+    private void runEvaluation(final EvaluationType evaluationType) {
         evaluateCpuButton.setEnabled(false);
         evaluateGpuButton.setEnabled(false);
         final TextView logPlaceholder = (TextView) findViewById(R.id.log_placeholder);
@@ -89,7 +79,7 @@ public class MattingEvaluationActivity extends AppCompatActivity {
                 int index = 0;
                 for (DataSetItem item : dataSet.getItems().values()) {
                     index++;
-                    final EvaluationResult result = performTest(item, evaluation);
+                    final EvaluationResult result = performTest(item, evaluationType);
                     dataSet.addResult(item, result);
 
                     final int finalIndex = index;
@@ -125,7 +115,7 @@ public class MattingEvaluationActivity extends AppCompatActivity {
 
     }
 
-    private EvaluationResult performTest(DataSetItem item, Evaluation evaluation) {
+    private EvaluationResult performTest(DataSetItem item, EvaluationType evaluation) {
         Bitmap image = MattingHelper.read(item.imagePath, Bitmap.Config.ARGB_8888);
         Bitmap trueAlpha = MattingHelper.convertToAlpha8(
                 MattingHelper.read(item.trueAlphaPath, Bitmap.Config.ARGB_8888));
@@ -137,9 +127,9 @@ public class MattingEvaluationActivity extends AppCompatActivity {
 
         Log.i(TAG, item.id + " |> calculate matte started");
         long startTime = System.currentTimeMillis();{
-            if (evaluation == Evaluation.CPU)
+            if (evaluation == EvaluationType.CPU)
                 TrimapActivity.calculateAlphaMask(image, trimap, calculatedAlpha);
-            if(evaluation == Evaluation.GPU){
+            if(evaluation == EvaluationType.GPU){
                 ;
             }
         }
