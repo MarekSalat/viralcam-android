@@ -31,6 +31,12 @@
                 android:paddingTop="16dp"
                 android:paddingBottom="32dp"
                 android:layout_marginBottom="72sp">
+                <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                    xmlns:tools="http://schemas.android.com/tools"
+                    android:id="@+id/compute_shader_fragment_container"
+                    android:layout_width="1dp"
+                    android:layout_height="1dp"
+                    android:visibility="invisible" />
                 <TextView
                     android:id="@+id/avg_time"
                     android:layout_width="wrap_content"
@@ -108,7 +114,8 @@
                     android:layout_alignParentEnd="true"
                     android:textSize="16sp"
                     android:visibility="gone"
-                    android:text="0%"/>
+                    android:text="0%"
+                    android:layout_alignParentRight="true" />
             </RelativeLayout>
 
             <android.support.v7.widget.Toolbar

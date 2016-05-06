@@ -21,6 +21,13 @@
             android:visibility="gone"
             android:layout_marginTop="-6dp"/>
 
+        <Spinner
+            android:id="@+id/image_scale_spinner"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            />
+
         <Button
             android:id="@+id/evaluate_cpu_button"
             android:layout_width="wrap_content"
@@ -34,6 +41,14 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="Evaluate alphamatting.com dataset - GPU"/>
+
+        <Button
+            android:id="@+id/cancel_evaluation_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:enabled="false"
+            android:text="Cancel"/>
 
         <TextView
             android:id="@+id/log_placeholder"

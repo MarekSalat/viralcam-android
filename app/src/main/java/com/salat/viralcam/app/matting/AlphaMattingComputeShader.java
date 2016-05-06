@@ -7,6 +7,7 @@ import android.opengl.GLES31;
 import android.opengl.GLES31Ext;
 import android.opengl.GLUtils;
 import android.os.Build;
+import android.util.Log;
 
 import com.salat.viralcam.app.R;
 import com.salat.viralcam.app.computeshader.ComputeShader;
@@ -38,10 +39,10 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
     private static final int ATOMIC_BUFFER_BINDING = 3;
     private static final int SAMPLE_BUFFER_BINDING = 4;
 
-    private static final int BOUNDARY_SIZE = 8000;
+    private static final int BOUNDARY_SIZE = 4096;
     private static final int BOUNDARY_BUFFER_CAPACITY = 2 * BOUNDARY_SIZE; // (x, y)
     private static final int WORKGROUP_SIZE = 32;
-    public static final int ALPHA_SAMPLEMATCH_ITERATIONS = 8;
+    public static final int ALPHA_SAMPLEMATCH_ITERATIONS = 12;
 
     static class SandboxVars {
         public int program;
@@ -335,6 +336,7 @@ public class AlphaMattingComputeShader implements ComputeShader, OnShaderArgsVal
         args.foregroundBoundarySize = Math.min(BOUNDARY_SIZE, atomicCountersResult.get(0));
         args.backgroundBoundarySize = Math.min(BOUNDARY_SIZE, atomicCountersResult.get(1));
         final int minBoundarySize = Math.min(BOUNDARY_SIZE, Math.min(atomicCountersResult.get(0), atomicCountersResult.get(1)));
+//        Log.i("foo", String.valueOf(minBoundarySize));
 
         // use program initializeSamples
         args.initializeSamplesDuration = System.nanoTime();

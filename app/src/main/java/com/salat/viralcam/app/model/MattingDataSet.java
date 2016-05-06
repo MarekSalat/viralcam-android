@@ -37,17 +37,17 @@ public class MattingDataSet {
             return PATH_TO_TRUE_ALPHA + "/" + String.format(AlphamattingComDataSet.FILE_NAME_FORMAT, id);
         }
 
-        public static String getResultAlphaPath(int id, int version){
+        public static String getResultAlphaPath(int id, EvaluationType evaluationType, int scale, int version){
             return RESULT_FOLDER_LOCATION + "/" +
+                    evaluationType.toString() + "_" + scale + "x_Alpha_" +
                     String.format(AlphamattingComDataSet.TRIMAP_VERSION_FOLDER_NAME_FORMAT, version) + "/" +
-                    RESULT_ALPHA_FOLDER_NAME + "/" +
                     String.format(AlphamattingComDataSet.FILE_NAME_FORMAT, id);
         }
 
-        public static String getResultImagePath(int id, int version){
+        public static String getResultImagePath(int id, EvaluationType evaluationType, int scale, int version){
             return RESULT_FOLDER_LOCATION + "/" +
+                    evaluationType.toString() + "_" + scale + "x_Image_" +
                     String.format(AlphamattingComDataSet.TRIMAP_VERSION_FOLDER_NAME_FORMAT, version) + "/" +
-                    RESULT_IMAGE_FOLDER_NAME + "/" +
                     String.format(AlphamattingComDataSet.FILE_NAME_FORMAT, id);
         }
     }
@@ -103,7 +103,51 @@ public class MattingDataSet {
         return sum / (double) results.size();
     }
 
-    public static MattingDataSet generateAlphamattingComDataSet(int trimapSetVersion){
+    public String csv(char separator) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("id");sb.append(separator);
+        sb.append("width");sb.append(separator);
+        sb.append("height");sb.append(separator);
+        sb.append("pixels");sb.append(separator);
+        sb.append("foreground pixels");sb.append(separator);
+        sb.append("background pixels");sb.append(separator);
+        sb.append("unknown pixels");sb.append(separator);
+        sb.append("computation time");sb.append(separator);
+//        sb.append("timePerUnknownPixel");sb.append(separator);
+        sb.append("mean squared error");sb.append(separator);
+        sb.append("sum of absolute differences");sb.append('\n');
+
+        for (EvaluationResult item : results.values()) {
+            sb.append(item.id);sb.append(separator);
+            sb.append(item.width());sb.append(separator);
+            sb.append(item.height());sb.append(separator);
+            sb.append(item.pixels());sb.append(separator);
+            sb.append(item.foregroundPixels());sb.append(separator);
+            sb.append(item.backgroundPixels());sb.append(separator);
+            sb.append(item.unknownPixels());sb.append(separator);
+            sb.append(item.computationTime());sb.append(separator);
+//            sb.append(item.avgComputationTimePerUnknownPixel());sb.append(separator);
+            sb.append(item.meanSquaredError());sb.append(separator);
+            sb.append(item.sumOfAbsoluteDifferences());sb.append('\n');
+        }
+
+        sb.append("");sb.append(separator);
+        sb.append("");sb.append(separator);
+        sb.append("");sb.append(separator);
+        sb.append("");sb.append(separator);
+        sb.append("");sb.append(separator);
+        sb.append("");sb.append(separator);
+        sb.append("");sb.append(separator);
+        sb.append(avgComputationTime());sb.append(separator);
+//            sb.append(item.timePerUnknownPixel());sb.append(separator);
+        sb.append(avgMse());sb.append(separator);
+        sb.append(avgSad());sb.append('\n');
+
+        return sb.toString();
+    }
+
+    public static MattingDataSet generateAlphamattingComDataSet(int trimapSetVersion, EvaluationType evaluationType, int scale){
         Map<Integer, DataSetItem> dataset = new TreeMap<>();
 
         for (int id = 1; id <= 27; id++) {
@@ -112,8 +156,8 @@ public class MattingDataSet {
                     AlphamattingComDataSet.getImagePath(id),
                     AlphamattingComDataSet.getTrimapPath(id, trimapSetVersion),
                     AlphamattingComDataSet.getTrueAlphaPath(id),
-                    AlphamattingComDataSet.getResultAlphaPath(id, trimapSetVersion),
-                    AlphamattingComDataSet.getResultImagePath(id, trimapSetVersion)));
+                    AlphamattingComDataSet.getResultAlphaPath(id, evaluationType, scale, trimapSetVersion),
+                    AlphamattingComDataSet.getResultImagePath(id, evaluationType, scale, trimapSetVersion)));
         }
 
         return new MattingDataSet(dataset);

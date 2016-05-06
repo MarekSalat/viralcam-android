@@ -25,7 +25,7 @@ public class MattingHelper {
 
         for (int x = 0; x < image.getWidth(); x++) {
             for (int y = 0; y < image.getHeight(); y++) {
-                int value = /*0xFF -*/ Color.green(image.getPixel(x, y));
+                int value = /*/0xFF -/**/ Color.green(image.getPixel(x, y));
                 alpha.setPixel(x, y, Color.argb(value, value, value, value));
             }
         }
@@ -121,6 +121,11 @@ public class MattingHelper {
 
     public static void saveImage(Bitmap image, String path) {
         File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + path);
+        File folderName = new File(file.getParent());
+
+        if(!folderName.exists()){
+            folderName.mkdir();
+        }
 
         FileOutputStream out = null;
 

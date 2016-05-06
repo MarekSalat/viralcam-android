@@ -53,7 +53,7 @@ void main(){
         value = 0xFF - int(_sample.alpha * 255.0);
     }
 
-    value = max(0, min(value, 0xFF));
+    value = 0xFF - max(0, min(value, 0xFF));
     alpha.data[y*dimensions.x + x] =  (value << 24) | (value << 16) | (value << 8) | (value);
     /**/
 
